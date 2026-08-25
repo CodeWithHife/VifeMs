@@ -2,18 +2,26 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
+import { authService } from "@/services/auth.service";
 import "./login.css";
 
-
 export default function LoginPage() {
+  const router = useRouter();
+  const { login } = useAuth();
+
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ title: string; sub: string } | null>(null);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setFormError(null);
 
     const errors: string[] = [];
     if (!email.trim()) errors.push("Email is required.");
@@ -21,37 +29,43 @@ export default function LoginPage() {
     if (password.length < 8) errors.push("Password must be at least 8 characters.");
 
     if (errors.length > 0) {
-      alert("⚠️ " + errors.join("\n"));
+      setFormError(errors[0]);
       return;
     }
 
-    setToastMessage({
-      title: "Welcome back!",
-      sub: "Redirecting you to your dashboard...",
-    });
+    setIsSubmitting(true);
+    try {
+      const result = await login({ email: email.trim(), password });
+      setToastMessage({
+        title: "🎉 Welcome back!",
+        sub: result.message || "Redirecting you...",
+      });
 
-
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 5000);
+      setTimeout(() => {
+        router.push("/");
+      }, 1500);
+    } catch (err: any) {
+      const msg = err.message || "Failed to log in. Please check your credentials.";
+      setFormError(msg);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleGoogleAuth = () => {
+    setFormError(null);
     setToastMessage({
       title: "Google Authentication",
-      sub: "Redirecting to Google...",
+      sub: "Redirecting to Google Sign-In...",
     });
-
-    setTimeout(() => {
-      setToastMessage(null);
-    }, 5000);
+    window.location.href = authService.getGoogleAuthUrl();
   };
 
   return (
     <div className="auth-page-root">
-      {/* Header Logo & Back Link */}
+      {/* Header with Logo and Back Link */}
       <header className="auth-header">
-        <Link href="/" className="auth-logo-link">
+        <Link href="/" className="auth-logo-link" title="VIFEMS Home">
           <img src="/logo/logo.png" alt="VIFEMS Logo" className="auth-header-logo" />
         </Link>
         <Link href="/" className="auth-back-link">
@@ -61,7 +75,6 @@ export default function LoginPage() {
           <span>Back to home</span>
         </Link>
       </header>
-
 
 
 
@@ -151,6 +164,17 @@ export default function LoginPage() {
               <h2>Log in to your account</h2>
             </div>
 
+            {formError && (
+              <div className="auth-error-banner" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{formError}</span>
+              </div>
+            )}
+
 
             <form onSubmit={handleSubmit} noValidate>
               <div className="form-group">
@@ -215,9 +239,35 @@ export default function LoginPage() {
                 <Link href="/forgot-password" className="forgot-link">Forgot password?</Link>
               </div>
 
-
-              <button type="submit" className="btn btn-primary">
-                Log in
+              <button
+                type="submit"
+                className="btn btn-primary"
+                disabled={isSubmitting}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  gap: "8px",
+                }}
+              >
+                {isSubmitting ? (
+                  <>
+                    <span
+                      style={{
+                        display: "inline-block",
+                        width: "16px",
+                        height: "16px",
+                        border: "2px solid rgba(255, 255, 255, 0.4)",
+                        borderTopColor: "#ffffff",
+                        borderRadius: "50%",
+                        animation: "spin 0.8s linear infinite",
+                      }}
+                    />
+                    <span>Logging in...</span>
+                  </>
+                ) : (
+                  "Log in"
+                )}
               </button>
 
               <div className="divider">

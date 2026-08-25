@@ -2,23 +2,17 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { useAuth } from "@/context/AuthContext";
 
 export const Navbar: React.FC = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const pathname = usePathname();
+  const { user, isAuthenticated, logout } = useAuth();
 
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
 
-  const isActive = (path: string) => {
-    if (path === "/" && pathname === "/") return true;
-    if (path !== "/" && pathname.startsWith(path)) return true;
-    return false;
-  };
-
   return (
-    <nav className="site-navbar">
+    <nav>
       <div className="nav-inner">
         <div className="logo">
           <Link href="/">
@@ -28,33 +22,63 @@ export const Navbar: React.FC = () => {
 
         {/* Desktop Navigation Links */}
         <div className="nav-links">
-          <Link href="/" className={isActive("/") ? "nav-item active" : "nav-item"}>
-            Home
-          </Link>
-          <Link href="/product" className={isActive("/product") ? "nav-item active" : "nav-item"}>
-            Product
-          </Link>
-          <Link href="/solutions" className={isActive("/solutions") ? "nav-item active" : "nav-item"}>
-            Solutions
-          </Link>
-          <Link href="/pricing" className={isActive("/pricing") ? "nav-item active" : "nav-item"}>
-            Pricing
-          </Link>
-          <Link href="/resources" className={isActive("/resources") ? "nav-item active" : "nav-item"}>
-            Resources
-          </Link>
+          <a href="#product">Product</a>
+          <a href="#solutions">Solutions</a>
+          <a href="#cta">Pricing</a>
+          <a href="#how">Resources</a>
         </div>
 
         {/* Desktop Actions */}
         <div className="nav-desktop-actions">
-          <Link href="/login" className="nav-login-icon-btn" title="Log in" aria-label="Log in">
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span>Login</span>
-          </Link>
-          <Link href="/signup" className="nav-cta nav-desktop-cta">Get started</Link>
+          {isAuthenticated ? (
+            <div style={{ display: "flex", alignItems: "center", gap: "14px" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: "8px", fontSize: "0.875rem", fontWeight: 600, color: "#1e293b" }}>
+                <div
+                  style={{
+                    width: "32px",
+                    height: "32px",
+                    borderRadius: "50%",
+                    background: "#2563eb",
+                    color: "#ffffff",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    fontSize: "0.85rem",
+                    fontWeight: 700,
+                  }}
+                >
+                  {user?.firstName?.[0] || user?.email?.[0]?.toUpperCase() || "U"}
+                </div>
+                <span>{user?.firstName ? `${user.firstName}` : user?.email}</span>
+              </div>
+              <button
+                onClick={logout}
+                style={{
+                  padding: "8px 16px",
+                  borderRadius: "8px",
+                  border: "1px solid #cbd5e1",
+                  background: "transparent",
+                  color: "#475569",
+                  fontWeight: 600,
+                  fontSize: "0.85rem",
+                  cursor: "pointer",
+                }}
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="nav-login-icon-btn" title="Log in" aria-label="Log in">
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span>Login</span>
+              </Link>
+              <Link href="/signup" className="nav-cta nav-desktop-cta">Get started</Link>
+            </>
+          )}
         </div>
 
         {/* Mobile Hamburger Button */}
@@ -72,31 +96,40 @@ export const Navbar: React.FC = () => {
       {/* Mobile Menu Dropdown */}
       {isOpen && (
         <div className="nav-mobile-menu">
-          <Link href="/" className={isActive("/") ? "mobile-nav-item active" : "mobile-nav-item"} onClick={closeMenu}>
-            Home
-          </Link>
-          <Link href="/product" className={isActive("/product") ? "mobile-nav-item active" : "mobile-nav-item"} onClick={closeMenu}>
-            Product
-          </Link>
-          <Link href="/solutions" className={isActive("/solutions") ? "mobile-nav-item active" : "mobile-nav-item"} onClick={closeMenu}>
-            Solutions
-          </Link>
-          <Link href="/pricing" className={isActive("/pricing") ? "mobile-nav-item active" : "mobile-nav-item"} onClick={closeMenu}>
-            Pricing
-          </Link>
-          <Link href="/resources" className={isActive("/resources") ? "mobile-nav-item active" : "mobile-nav-item"} onClick={closeMenu}>
-            Resources
-          </Link>
-          <Link href="/login" className="nav-login-icon-btn" onClick={closeMenu} style={{ justifyContent: "center", width: "100%" }}>
-            <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-              <circle cx="12" cy="7" r="4" />
-            </svg>
-            <span>Login</span>
-          </Link>
-          <Link href="/signup" className="nav-cta" onClick={closeMenu} style={{ width: "100%", textAlign: "center" }}>
-            Get started
-          </Link>
+          <a href="#product" onClick={closeMenu}>Product</a>
+          <a href="#solutions" onClick={closeMenu}>Solutions</a>
+          <a href="#cta" onClick={closeMenu}>Pricing</a>
+          <a href="#how" onClick={closeMenu}>Resources</a>
+          {isAuthenticated ? (
+            <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", marginTop: "8px" }}>
+              <div style={{ textAlign: "center", fontWeight: 600, color: "#1e293b" }}>
+                Signed in as {user?.firstName ? `${user.firstName} ${user.lastName}` : user?.email}
+              </div>
+              <button
+                onClick={() => {
+                  logout();
+                  closeMenu();
+                }}
+                className="nav-cta"
+                style={{ width: "100%", textAlign: "center", background: "#ef4444", borderColor: "#ef4444" }}
+              >
+                Log out
+              </button>
+            </div>
+          ) : (
+            <>
+              <Link href="/login" className="nav-login-icon-btn" onClick={closeMenu} style={{ justifyContent: "center", width: "100%" }}>
+                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                  <circle cx="12" cy="7" r="4" />
+                </svg>
+                <span>Login</span>
+              </Link>
+              <Link href="/signup" className="nav-cta" onClick={closeMenu} style={{ width: "100%", textAlign: "center" }}>
+                Get started
+              </Link>
+            </>
+          )}
         </div>
       )}
     </nav>

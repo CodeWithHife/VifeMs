@@ -80,9 +80,6 @@ nav {
   padding: 8px 14px;
   border-radius: 8px;
   transition: all 0.2s ease;
-  color: #475569;
-  font-weight: 500;
-  text-decoration: none;
 }
 .nav-links a::after {
   content: "";
@@ -104,17 +101,6 @@ nav {
 .nav-links a:hover::after {
   transform: scaleX(1);
 }
-.nav-links a.active {
-  color: var(--primary);
-  background: rgba(37, 99, 235, 0.06);
-  font-weight: 600;
-}
-.nav-links a.active::after {
-  transform: scaleX(1);
-}
-
-
-
 
 .nav-desktop-actions {
   display: flex;
@@ -197,11 +183,8 @@ nav {
   border-bottom: 1px solid var(--border);
   animation: slideDown 0.25s ease-out;
 }
-.nav-mobile-menu a { font-family: var(--body); font-size: 16px; font-weight: 500; color: var(--text); padding: 8px 12px; text-decoration: none; transition: color 0.2s ease; }
+.nav-mobile-menu a { font-size: 16px; font-weight: 500; color: var(--text); }
 .nav-mobile-menu a:hover { color: var(--primary); }
-.nav-mobile-menu a.mobile-nav-item.active { color: var(--primary); font-weight: 600; }
-
-
 
 @keyframes slideDown {
   from { opacity: 0; transform: translateY(-10px); }
@@ -848,64 +831,4 @@ h2.section-title { font-family: var(--display); font-weight: 700; font-size: cla
 }
 
 @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
-
-/* --- LIGHTWEIGHT PAGE ENTER & SCROLL ANIMATIONS --- */
-@keyframes pageFadeInUp {
-  0% {
-    opacity: 0;
-    transform: translateY(18px);
-  }
-  100% {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-.page-enter-fade {
-  animation: pageFadeInUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-.scroll-reveal {
-  animation: pageFadeInUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards;
-}
-
-/* --- SCROLL-DRIVEN ENTRANCE ANIMATIONS --- */
-@keyframes scrollRevealUp {
-  from {
-    opacity: 0;
-    transform: translateY(28px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@supports (animation-timeline: view()) {
-  .capability-subcard,
-  .solution-card,
-  .pricing-card,
-  .resource-guide-card,
-  .legal-content-box {
-    animation: scrollRevealUp 0.6s cubic-bezier(0.16, 1, 0.3, 1) both;
-    animation-timeline: view();
-    animation-range: entry 10% cover 30%;
-  }
-}
-
-.support-email-pill {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  background: rgba(255, 255, 255, 0.12);
-  border: 1px solid rgba(255, 255, 255, 0.25);
-  padding: 8px 18px;
-  border-radius: 30px;
-  font-size: 14px;
-  font-weight: 700;
-  color: #93c5fd;
-  margin-top: 14px;
-}
-
-
 

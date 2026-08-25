@@ -2,308 +2,177 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import "./forgot-password.css";
+import { useAuth } from "@/context/AuthContext";
+import "../login/login.css";
 
 export default function ForgotPasswordPage() {
-  const router = useRouter();
-  const [step, setStep] = useState<1 | 2 | 3>(1);
+  const { forgotPassword } = useAuth();
   const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSubmitted, setIsSubmitted] = useState(false);
+  const [formError, setFormError] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ title: string; sub: string } | null>(null);
 
-  // Handle Step 1: Send Reset Code
-  const handleSendCode = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
-      alert("Please enter a valid work email address.");
+    setFormError(null);
+
+    if (!email.trim()) {
+      setFormError("Email is required.");
+      return;
+    }
+    if (!/^\S+@\S+\.\S+$/.test(email)) {
+      setFormError("Please enter a valid email address.");
       return;
     }
 
-    setToastMessage({
-      title: "Verification code sent!",
-      sub: `We sent a 6-digit verification code to ${email}.`,
-    });
-
-    setTimeout(() => {
-      setToastMessage(null);
-      setStep(2);
-    }, 1500);
-  };
-
-  // Handle Step 2: Verify Code
-  const handleVerifyCode = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (code.trim().length < 4) {
-      alert("Please enter the verification code sent to your email.");
-      return;
+    setIsSubmitting(true);
+    try {
+      const response = await forgotPassword(email.trim());
+      setIsSubmitted(true);
+      setToastMessage({
+        title: "✉️ Email Sent",
+        sub: response.message || "Password reset instructions sent if account exists.",
+      });
+      setTimeout(() => setToastMessage(null), 6000);
+    } catch (err: any) {
+      setFormError(err.message || "Failed to process request. Please try again.");
+    } finally {
+      setIsSubmitting(false);
     }
-
-    setToastMessage({
-      title: "Code verified!",
-      sub: "You can now enter your new password.",
-    });
-
-    setTimeout(() => {
-      setToastMessage(null);
-      setStep(3);
-    }, 1200);
-  };
-
-  // Handle Step 3: Set New Password
-  const handleResetPassword = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (newPassword.length < 8) {
-      alert("New password must be at least 8 characters long.");
-      return;
-    }
-    if (newPassword !== confirmPassword) {
-      alert("Passwords do not match. Please re-enter.");
-      return;
-    }
-
-    setToastMessage({
-      title: "Password updated successfully!",
-      sub: "Redirecting you to login...",
-    });
-
-    setTimeout(() => {
-      setToastMessage(null);
-      router.push("/login");
-    }, 2000);
   };
 
   return (
-    <div className="auth-page-root fp-page-root">
-      {/* Toast Notification */}
-      {toastMessage && (
-        <div className="toast-notification animate-fade-in">
-          <div className="toast-icon">
-            <svg viewBox="0 0 24 24" width="20" height="20" stroke="currentColor" strokeWidth="2.5" fill="none">
-              <polyline points="20 6 9 17 4 12" />
-            </svg>
-          </div>
-          <div className="toast-text">
-            <strong>{toastMessage.title}</strong>
-            <span>{toastMessage.sub}</span>
-          </div>
-        </div>
-      )}
-
-      {/* Auth Navigation Header */}
+    <div className="auth-page-root">
+      {/* Header with Logo and Back Link */}
       <header className="auth-header">
-        <Link href="/" className="auth-logo-link">
+        <Link href="/" className="auth-logo-link" title="VIFEMS Home">
           <img src="/logo/logo.png" alt="VIFEMS Logo" className="auth-header-logo" />
         </Link>
-        <Link href="/" className="auth-back-link">
+        <Link href="/login" className="auth-back-link">
           <svg width="16" height="16" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
             <path d="M10 12L6 8L10 4" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
-          <span>Back to home</span>
+          <span>Back to login</span>
         </Link>
       </header>
 
-      {/* Split Desktop / Glass Mobile Layout */}
       <div className="split-wrapper">
-        {/* LEFT PANEL: Animated Graphic Canvas (Hidden on Mobile) */}
+        {/* LEFT: Blue side with illustration */}
         <div className="split-left desktop-only-left">
           <div className="blob-left blob-1"></div>
           <div className="blob-left blob-2"></div>
 
           <div className="content animate-fade-up">
             <h1>
-              Secure Account <span className="highlight">Recovery</span>
+              Account <span className="highlight">Recovery</span>
             </h1>
             <p className="lead">
-              Reset your password safely with end-to-end token verification in 3 quick steps.
+              Don't worry, reset instructions will be sent straight to your registered email address.
             </p>
-
-            {/* Vector Illustration */}
-            <div className="illustration-wrapper animate-float">
-              <svg viewBox="0 0 480 280" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <defs>
-                  <linearGradient id="fpGlow" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#60a5fa" stopOpacity="0.25" />
-                    <stop offset="100%" stopColor="#1e3a8a" stopOpacity="0.05" />
-                  </linearGradient>
-                  <linearGradient id="fpShieldGrad" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" stopColor="#3b82f6" />
-                    <stop offset="100%" stopColor="#1d4ed8" />
-                  </linearGradient>
-                </defs>
-
-                {/* Grid Canvas */}
-                <path d="M 40 40 L 440 40 M 40 100 L 440 100 M 40 160 L 440 160 M 40 220 L 440 220" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="4 4" />
-                <path d="M 100 20 L 100 260 M 240 20 L 240 260 M 380 20 L 380 260" stroke="rgba(255,255,255,0.06)" strokeWidth="1" strokeDasharray="4 4" />
-
-                {/* Central Shield Lock */}
-                <circle cx="240" cy="140" r="85" fill="url(#fpGlow)" stroke="rgba(255,255,255,0.15)" strokeWidth="1.5" />
-                <circle cx="240" cy="140" r="65" stroke="rgba(96, 165, 250, 0.3)" strokeWidth="2" strokeDasharray="6 6" className="gear-spin" style={{ transformOrigin: "240px 140px", animationDuration: "25s" }} />
-
-                {/* Security Shield Card */}
-                <rect x="195" y="90" width="90" height="100" rx="18" fill="url(#fpShieldGrad)" stroke="rgba(255,255,255,0.3)" strokeWidth="2" style={{ filter: "drop-shadow(0px 10px 20px rgba(0,0,0,0.3))" }} />
-
-                <path d="M 240 115 L 240 145" stroke="#ffffff" strokeWidth="3.5" strokeLinecap="round" />
-                <circle cx="240" cy="158" r="5" fill="#ffffff" />
-                <path d="M 225 130 C 225 120, 255 120, 255 130" stroke="#ffffff" strokeWidth="3" fill="none" strokeLinecap="round" />
-              </svg>
-            </div>
           </div>
         </div>
 
-        {/* RIGHT PANEL: Form Container */}
+        {/* RIGHT: Form container */}
         <div className="split-right">
           <div className="form-container animate-fade-up">
-
-            {/* Step Progress Bar */}
-            <div className="fp-progress-bar">
-              <div className={`progress-step ${step >= 1 ? "active" : ""}`}>
-                <span className="step-num">1</span>
-                <span className="step-text">Email</span>
-              </div>
-              <div className="progress-line"></div>
-              <div className={`progress-step ${step >= 2 ? "active" : ""}`}>
-                <span className="step-num">2</span>
-                <span className="step-text">Verification</span>
-              </div>
-              <div className="progress-line"></div>
-              <div className={`progress-step ${step >= 3 ? "active" : ""}`}>
-                <span className="step-num">3</span>
-                <span className="step-text">New Password</span>
-              </div>
+            <div className="form-header">
+              <h2>Forgot your password?</h2>
+              <p>Enter the email address associated with your account and we&apos;ll send you a recovery link.</p>
             </div>
 
-            {/* STEP 1: Email Form */}
-            {step === 1 && (
-              <form onSubmit={handleSendCode} noValidate className="fp-form-step">
-                <div className="form-header">
-                  <h2>Reset your password</h2>
-                  <p className="form-subtitle">Enter your work email address to receive a 6-digit recovery code.</p>
-                </div>
+            {formError && (
+              <div className="auth-error-banner" role="alert">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{formError}</span>
+              </div>
+            )}
 
+            {isSubmitted ? (
+              <div style={{ textAlign: "center", padding: "20px 0" }}>
+                <div
+                  style={{
+                    width: "56px",
+                    height: "56px",
+                    borderRadius: "50%",
+                    background: "rgba(37, 99, 235, 0.1)",
+                    color: "#2563eb",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                    margin: "0 auto 16px auto",
+                  }}
+                >
+                  <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M22 17a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9.5C2 7 4 5 6.5 5H18c2.2 0 4 1.8 4 4v8Z" />
+                    <polyline points="22,6 12,13 2,6" />
+                  </svg>
+                </div>
+                <h3 style={{ fontSize: "1.25rem", fontWeight: 700, marginBottom: "8px", color: "#0f172a" }}>
+                  Check your email
+                </h3>
+                <p style={{ color: "#64748b", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: "24px" }}>
+                  We sent password reset instructions to <strong>{email}</strong>. If you don&apos;t see it, check your spam folder.
+                </p>
+
+                <button
+                  type="button"
+                  onClick={() => setIsSubmitted(false)}
+                  className="btn btn-primary"
+                  style={{ marginBottom: "16px" }}
+                >
+                  Try another email
+                </button>
+
+                <Link href="/login" className="auth-switch-link" style={{ display: "inline-block" }}>
+                  Return to login
+                </Link>
+              </div>
+            ) : (
+              <form onSubmit={handleSubmit} noValidate>
                 <div className="form-group">
-                  <label htmlFor="fp-email">
-                    Work Email Address <span className="required">*</span>
+                  <label htmlFor="email">
+                    Email address <span className="required">*</span>
                   </label>
                   <input
                     type="email"
-                    id="fp-email"
+                    id="email"
                     placeholder="you@example.com"
                     value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    onChange={(e) => {
+                      setEmail(e.target.value);
+                      if (formError) setFormError(null);
+                    }}
                     required
                   />
                 </div>
 
-                <button type="submit" className="submit-btn">
-                  Send Recovery Code
+                <button type="submit" className="btn btn-primary" disabled={isSubmitting}>
+                  {isSubmitting ? "Sending reset link..." : "Send reset link"}
                 </button>
 
-                <div className="switch-auth">
-                  Remember your password?{" "}
-                  <Link href="/login" className="auth-switch-link">
-                    Log in
-                  </Link>
+                <div className="form-footer" style={{ marginTop: "24px" }}>
+                  <p className="auth-switch-prompt">
+                    Remember your password? <Link href="/login" className="auth-switch-link">Log in</Link>
+                  </p>
                 </div>
               </form>
             )}
-
-            {/* STEP 2: Code Form */}
-            {step === 2 && (
-              <form onSubmit={handleVerifyCode} noValidate className="fp-form-step">
-                <div className="form-header">
-                  <h2>Enter verification code</h2>
-                  <p className="form-subtitle">We sent a 6-digit code to <strong>{email}</strong>.</p>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="fp-code">
-                    Verification Code <span className="required">*</span>
-                  </label>
-                  <input
-                    type="text"
-                    id="fp-code"
-                    placeholder="e.g. 849204"
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    maxLength={6}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="submit-btn">
-                  Verify Code & Continue
-                </button>
-
-                <div className="switch-auth">
-                  Didn&apos;t receive the code?{" "}
-                  <button type="button" onClick={() => setStep(1)} className="auth-switch-link" style={{ background: "none", border: "none", cursor: "pointer" }}>
-                    Resend Code
-                  </button>
-                </div>
-              </form>
-            )}
-
-            {/* STEP 3: New Password Form */}
-            {step === 3 && (
-              <form onSubmit={handleResetPassword} noValidate className="fp-form-step">
-                <div className="form-header">
-                  <h2>Set new password</h2>
-                  <p className="form-subtitle">Choose a secure password with at least 8 characters.</p>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="new-password">
-                    New Password <span className="required">*</span>
-                  </label>
-                  <div className="password-toggle">
-                    <input
-                      type={showPassword ? "text" : "password"}
-                      id="new-password"
-                      placeholder="Min. 8 characters"
-                      value={newPassword}
-                      onChange={(e) => setNewPassword(e.target.value)}
-                      required
-                      minLength={8}
-                    />
-                    <button
-                      type="button"
-                      className="toggle-btn"
-                      onClick={() => setShowPassword(!showPassword)}
-                      aria-label="Toggle password visibility"
-                    >
-                      {showPassword ? "Hide" : "Show"}
-                    </button>
-                  </div>
-                </div>
-
-                <div className="form-group">
-                  <label htmlFor="confirm-password">
-                    Confirm New Password <span className="required">*</span>
-                  </label>
-                  <input
-                    type={showPassword ? "text" : "password"}
-                    id="confirm-password"
-                    placeholder="Re-enter new password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    required
-                  />
-                </div>
-
-                <button type="submit" className="submit-btn">
-                  Update Password & Log In
-                </button>
-              </form>
-            )}
-
           </div>
         </div>
       </div>
+
+      {/* Toast Notification */}
+      {toastMessage && (
+        <div className="toast show">
+          <div className="toast-title">{toastMessage.title}</div>
+          <div className="toast-sub">{toastMessage.sub}</div>
+        </div>
+      )}
     </div>
   );
 }

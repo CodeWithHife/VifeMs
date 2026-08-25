@@ -1,97 +1,83 @@
-'use client';
-
 import React from "react";
-import Link from "next/link";
 
 export const Footer: React.FC = () => {
-  const scrollToTop = () => {
-    window.scrollTo({ top: 0, behavior: "smooth" });
-  };
-
   return (
     <footer className="site-footer">
       <div className="wrap">
         <div className="footer-grid">
-          {/* Brand & Mission Column */}
+          {/* Brand & Motto Column */}
           <div className="footer-brand-col">
             <div className="footer-logo">
-              <Link href="/">
-                <img
-                  src="/logo/logo.png"
-                  alt="VIFEMS Logo"
-                  style={{ height: "48px", width: "auto", objectFit: "contain" }}
-                />
-              </Link>
+              <img src="/logo/logo.png" alt="VIFEMS Logo" style={{ height: "36px", width: "auto", objectFit: "contain" }} />
             </div>
-            <p className="footer-tagline">MANAGE · SIMPLIFY · GROW</p>
-            <p className="footer-desc">
-              VIFEMS connects staff shifts, customer balances, payments, and operational reports into one straightforward workspace.
+            <p className="footer-tagline">
+              MANAGE · SIMPLIFY · GROW
             </p>
-            <div className="footer-support-box">
-              <span className="support-label">Need assistance?</span>
-              <a href="mailto:vifemssupport@email.com" className="footer-email-link">
-                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-                  <polyline points="22,6 12,13 2,6" />
-                </svg>
-                <span>vifemssupport@email.com</span>
-              </a>
-            </div>
+            <p className="footer-desc">
+              VIFEMS connects your people, attendance, payments, and operations into one seamless workspace.
+            </p>
           </div>
 
-          {/* Navigation Column 1: Navigation */}
+          {/* Product Links */}
           <div className="footer-col">
-            <h4 className="footer-col-title">Navigation</h4>
+            <h4 className="footer-col-title">Product</h4>
             <ul className="footer-links">
-              <li><Link href="/">Home Page</Link></li>
-              <li><Link href="/product">Product Overview</Link></li>
-              <li><Link href="/solutions">Solutions Hub</Link></li>
-              <li><Link href="/pricing">Pricing Plans</Link></li>
-              <li><Link href="/resources">Setup Guides</Link></li>
+              <li><a href="#product">Business Dashboard</a></li>
+              <li><a href="#product">Staff Management</a></li>
+              <li><a href="#product">Customer Management</a></li>
+              <li><a href="#product">Tasks</a></li>
+              <li><a href="#product">Finance</a></li>
+              <li><a href="#product">Reports</a></li>
+              <li><a href="#product">Notifications</a></li>
             </ul>
           </div>
 
-          {/* Navigation Column 2: Industry Solutions */}
+          {/* Company Links */}
           <div className="footer-col">
-            <h4 className="footer-col-title">Solutions</h4>
+            <h4 className="footer-col-title">Company</h4>
             <ul className="footer-links">
-              <li><Link href="/solutions">Schools & Academies</Link></li>
-              <li><Link href="/solutions">Gyms & Studios</Link></li>
-              <li><Link href="/solutions">Service Agencies</Link></li>
-              <li><Link href="/solutions">Retail & Multi-Branch</Link></li>
-              <li><Link href="/solutions">Field Services</Link></li>
-              <li><Link href="/solutions">Clinics & Wellness</Link></li>
+              <li><a href="#about">About VIFEMS</a></li>
+              <li><a href="#careers">Careers</a></li>
+              <li><a href="#press">Press</a></li>
+              <li><a href="#partners">Partners</a></li>
             </ul>
           </div>
 
-          {/* Navigation Column 3: Legal & Account */}
+          {/* Resources Links */}
           <div className="footer-col">
-            <h4 className="footer-col-title">Account & Legal</h4>
+            <h4 className="footer-col-title">Resources</h4>
             <ul className="footer-links">
-              <li><Link href="/login">Log In to Workspace</Link></li>
-              <li><Link href="/signup">Create Free Account</Link></li>
-              <li><Link href="/forgot-password">Reset Password</Link></li>
-              <li><Link href="/terms">Terms of Service</Link></li>
-              <li><Link href="/privacy">Privacy Policy</Link></li>
+              <li><a href="#docs">Documentation</a></li>
+              <li><a href="#guides">Guides</a></li>
+              <li><a href="#help">Help Center</a></li>
+              <li><a href="#status">API Status</a></li>
+            </ul>
+          </div>
+
+          {/* Legal Links */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Legal</h4>
+            <ul className="footer-links">
+              <li><a href="#privacy">Privacy Policy</a></li>
+              <li><a href="#terms">Terms of Service</a></li>
+              <li><a href="#security">Security</a></li>
+              <li><a href="#compliance">Compliance</a></li>
+            </ul>
+          </div>
+
+          {/* Contact Links */}
+          <div className="footer-col">
+            <h4 className="footer-col-title">Contact</h4>
+            <ul className="footer-links">
+              <li><a href="mailto:support@vifems.com">Support Email</a></li>
+              <li><a href="#chat">Live Chat</a></li>
+              <li><a href="#sales">Contact Sales</a></li>
             </ul>
           </div>
         </div>
 
-        {/* Footer Bottom Bar */}
         <div className="footer-bottom">
-          <div className="footer-status-pill">
-            <span className="status-dot"></span>
-            <span>All Systems Operational</span>
-          </div>
-
-          <p className="copyright-text">© {new Date().getFullYear()} VIFEMS. All rights reserved.</p>
-
-          <button onClick={scrollToTop} className="back-to-top-btn" aria-label="Back to top">
-            <span>Back to top</span>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-              <polyline points="18 15 12 9 6 15" />
-            </svg>
-          </button>
+          <p>© {new Date().getFullYear()} VIFEMS. All rights reserved.</p>
         </div>
       </div>
     </footer>
