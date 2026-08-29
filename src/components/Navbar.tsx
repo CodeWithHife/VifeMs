@@ -24,7 +24,7 @@ export const Navbar: React.FC = () => {
         <div className="nav-links">
           <a href="#product">Product</a>
           <a href="#solutions">Solutions</a>
-          <a href="#cta">Pricing</a>
+          <a href="#pricing">Pricing</a>
           <a href="#how">Resources</a>
         </div>
 
@@ -98,7 +98,7 @@ export const Navbar: React.FC = () => {
         <div className="nav-mobile-menu">
           <a href="#product" onClick={closeMenu}>Product</a>
           <a href="#solutions" onClick={closeMenu}>Solutions</a>
-          <a href="#cta" onClick={closeMenu}>Pricing</a>
+          <a href="#pricing" onClick={closeMenu}>Pricing</a>
           <a href="#how" onClick={closeMenu}>Resources</a>
           {isAuthenticated ? (
             <div style={{ display: "flex", flexDirection: "column", gap: "10px", width: "100%", marginTop: "8px" }}>

@@ -15,6 +15,7 @@ import { Solutions } from "@/components/Solutions";
 import { WhyVifems } from "@/components/WhyVifems";
 import { TrustSection } from "@/components/TrustSection";
 import { CtaSection } from "@/components/CtaSection";
+import { PricingSection } from "@/components/PricingSection";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -150,6 +151,7 @@ export default function Home() {
       <Solutions />
       <WhyVifems />
       <TrustSection />
+      <PricingSection />
       <CtaSection />
       <Footer />
     </main>
