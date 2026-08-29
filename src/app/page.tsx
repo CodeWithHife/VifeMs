@@ -6,7 +6,6 @@ import { ScrollTrigger } from "gsap/ScrollTrigger";
 import { Navbar } from "@/components/Navbar";
 import { Hero } from "@/components/Hero";
 import { DashboardMock } from "@/components/DashboardMock";
-import { StatsStrip } from "@/components/StatsStrip";
 import { ProblemSection } from "@/components/ProblemSection";
 import { ProductShowcase } from "@/components/ProductShowcase";
 import { HowItWorks } from "@/components/HowItWorks";
@@ -143,7 +142,6 @@ export default function Home() {
       <Navbar />
       <Hero />
       <DashboardMock />
-      <StatsStrip />
       <ProblemSection />
       <ProductShowcase />
       <HowItWorks />
