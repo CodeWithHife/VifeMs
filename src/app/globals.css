@@ -636,7 +636,7 @@ h2.section-title { font-family: var(--display); font-weight: 700; font-size: cla
 .testimonials .section-body { color: #94A3B8; }
 .marquee-row { display: flex; gap: 16px; margin-top: 16px; white-space: nowrap; width: max-content; }
 .marquee-viewport { overflow: hidden; margin-top: 20px; }
-.t-card { flex-shrink: 0; background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 20px; white-space: normal; width: 340px; }
+.t-card { flex-shrink: 0; background: linear-gradient(135deg, #0F172A 0%, #1E3A8A 50%, #1D4ED8 100%); border: 1px solid rgba(255,255,255,0.1); border-radius: 12px; padding: 16px 20px; white-space: normal; width: 340px; }
 .t-quote { font-size: 14.5px; color: #E2E8F0; line-height: 1.5; }
 .t-attr { margin-top: 10px; font-family: var(--mono); font-size: 11.5px; color: #7DD3FC; }
 

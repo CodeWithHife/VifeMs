@@ -641,6 +641,13 @@
   50% { filter: drop-shadow(0 0 8px rgba(147, 197, 253, 0.8)); }
 }
 
+/* ---------- DESKTOP: Hide logo on auth pages ---------- */
+@media (min-width: 901px) {
+  .auth-logo-link {
+    display: none !important;
+  }
+}
+
 /* ---------- PREMIUM STYLED MOBILE VIEW ---------- */
 @media (max-width: 900px) {
   .desktop-only-left {
