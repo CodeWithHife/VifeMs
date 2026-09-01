@@ -1,5 +1,6 @@
 export interface BusinessInfo {
   name: string;
+  logo?: string;
   email: string;
   phone: string;
   address: string;

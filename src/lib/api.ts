@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'https://vifems-backend.onrender.com';
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
 
 const TOKEN_KEY = 'vifems_token';
 const REFRESH_TOKEN_KEY = 'vifems_refresh_token';
