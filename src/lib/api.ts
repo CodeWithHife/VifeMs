@@ -1,5 +1,5 @@
 export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || '';
+  process.env.NEXT_PUBLIC_API_URL?.replace(/\/$/, '') || 'https://vifems-backend.onrender.com';
 
 const TOKEN_KEY = 'vifems_token';
 const REFRESH_TOKEN_KEY = 'vifems_refresh_token';
@@ -46,12 +46,14 @@ export const tokenStorage = {
 
 export class ApiError extends Error {
   statusCode: number;
+  status: number; // alias for compatibility
   data: unknown;
 
   constructor(message: string, statusCode: number, data?: unknown) {
     super(message);
     this.name = 'ApiError';
     this.statusCode = statusCode;
+    this.status = statusCode; // mirror for convenience
     this.data = data;
   }
 }

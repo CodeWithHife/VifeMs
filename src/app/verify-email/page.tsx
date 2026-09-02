@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, Suspense } from "react";
+import React, { useState, useEffect, useCallback, Suspense } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
@@ -21,16 +21,7 @@ function VerifyEmailContent() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [toastMessage, setToastMessage] = useState<{ title: string; sub: string } | null>(null);
 
-  // Auto-verify if token param exists in URL
-  useEffect(() => {
-    const urlToken = searchParams.get("token");
-    if (urlToken) {
-      setTokenInput(urlToken);
-      handleTokenVerification(urlToken);
-    }
-  }, [searchParams]);
-
-  const handleTokenVerification = async (tok: string) => {
+  const handleTokenVerification = useCallback(async (tok: string) => {
     if (!tok.trim()) {
       setErrorMessage("Verification token cannot be empty.");
       return;
@@ -44,18 +35,27 @@ function VerifyEmailContent() {
       setIsVerified(true);
       setStatusMessage(res.message || "Email address verified successfully!");
       setToastMessage({
-        title: "🎉 Verified!",
-        sub: "Your email has been verified. Redirecting to login...",
+        title: "Email Verified!",
+        sub: "Your email has been verified. Redirecting to workspace onboarding...",
       });
       setTimeout(() => {
-        router.push("/login");
-      }, 2500);
+        router.push("/onboarding");
+      }, 2000);
     } catch (err: any) {
       setErrorMessage(err.message || "Invalid or expired verification token.");
     } finally {
       setIsVerifying(false);
     }
-  };
+  }, [router, verifyEmail]);
+
+  // Auto-verify if token param exists in URL
+  useEffect(() => {
+    const urlToken = searchParams.get("token");
+    if (urlToken) {
+      setTokenInput(urlToken);
+      handleTokenVerification(urlToken);
+    }
+  }, [searchParams, handleTokenVerification]);
 
   const handleManualSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -163,11 +163,11 @@ function VerifyEmailContent() {
                   Email Verified Successfully
                 </h3>
                 <p style={{ color: "#64748b", fontSize: "0.95rem", lineHeight: 1.6, marginBottom: "24px" }}>
-                  {statusMessage || "Your email address has been confirmed. You can now log into your account."}
+                  {statusMessage || "Your email address has been confirmed. You can now configure your workspace."}
                 </p>
 
-                <Link href="/login" className="btn btn-primary" style={{ display: "inline-block", textAlign: "center", width: "100%" }}>
-                  Proceed to login
+                <Link href="/onboarding" className="btn btn-primary" style={{ display: "inline-block", textAlign: "center", width: "100%" }}>
+                  Proceed to Onboarding
                 </Link>
               </div>
             ) : showResend ? (

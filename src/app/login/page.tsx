@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { authService } from "@/services/auth.service";
+import { tokenStorage } from "@/lib/api";
 import "./login.css";
 
 export default function LoginPage() {
@@ -37,16 +38,15 @@ export default function LoginPage() {
     try {
       const result = await login({ email: email.trim(), password });
       setToastMessage({
-        title: "🎉 Welcome back!",
-        sub: result.message || "Redirecting you...",
+        title: "Welcome back!",
+        sub: result.message || "Redirecting to workspace dashboard...",
       });
 
       setTimeout(() => {
-        router.push("/");
-      }, 1500);
+        router.push("/dashboard");
+      }, 800);
     } catch (err: any) {
-      const msg = err.message || "Failed to log in. Please check your credentials.";
-      setFormError(msg);
+      setFormError(err.message || "Invalid email or password. Please try again.");
     } finally {
       setIsSubmitting(false);
     }

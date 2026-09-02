@@ -24,9 +24,13 @@ export const metadata: Metadata = {
   title: "VIFEMS — Manage. Simplify. Grow.",
   description: "VIFEMS brings your people, staff, attendance, payments and reports into one connected workspace.",
   icons: {
-    icon: "/logo/favicon.jfif",
-    shortcut: "/logo/favicon.jfif",
-    apple: "/logo/favicon.jfif",
+    icon: [
+      { url: "/favicon.ico", sizes: "any" },
+      { url: "/icon.png", type: "image/png", sizes: "any" },
+      { url: "/logo/logo.png", type: "image/png", sizes: "any" },
+    ],
+    shortcut: "/favicon.ico",
+    apple: { url: "/logo/logo.png", sizes: "180x180", type: "image/png" },
   },
 };
 

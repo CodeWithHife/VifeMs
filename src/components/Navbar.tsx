@@ -2,14 +2,21 @@
 
 import React, { useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 
 export const Navbar: React.FC = () => {
+  const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
   const { user, isAuthenticated, logout } = useAuth();
 
   const toggleMenu = () => setIsOpen((prev) => !prev);
   const closeMenu = () => setIsOpen(false);
+
+  const handleLogout = () => {
+    logout();
+    router.push('/login');
+  };
 
   return (
     <nav>
@@ -38,7 +45,7 @@ export const Navbar: React.FC = () => {
                     width: "32px",
                     height: "32px",
                     borderRadius: "50%",
-                    background: "#2563eb",
+                    background: "#1a3a8a",
                     color: "#ffffff",
                     display: "flex",
                     alignItems: "center",
@@ -52,7 +59,7 @@ export const Navbar: React.FC = () => {
                 <span>{user?.firstName ? `${user.firstName}` : user?.email}</span>
               </div>
               <button
-                onClick={logout}
+                onClick={handleLogout}
                 style={{
                   padding: "8px 16px",
                   borderRadius: "8px",
@@ -69,14 +76,8 @@ export const Navbar: React.FC = () => {
             </div>
           ) : (
             <>
-              <Link href="/login" className="nav-login-icon-btn" title="Log in" aria-label="Log in">
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span>Login</span>
-              </Link>
-              <Link href="/signup" className="nav-cta nav-desktop-cta">Get started</Link>
+              <a href="/login" className="nav-cta nav-desktop-cta nav-login-text" style={{ marginRight: "8px", background: "transparent", border: "1.5px solid #2563EB", color: "#2563EB" }}>Log In</a>
+              <a href="/signup" className="nav-cta nav-desktop-cta">Sign Up</a>
             </>
           )}
         </div>
@@ -109,6 +110,7 @@ export const Navbar: React.FC = () => {
                 onClick={() => {
                   logout();
                   closeMenu();
+                  router.push('/login');
                 }}
                 className="nav-cta"
                 style={{ width: "100%", textAlign: "center", background: "#ef4444", borderColor: "#ef4444" }}
@@ -117,18 +119,10 @@ export const Navbar: React.FC = () => {
               </button>
             </div>
           ) : (
-            <>
-              <Link href="/login" className="nav-login-icon-btn" onClick={closeMenu} style={{ justifyContent: "center", width: "100%" }}>
-                <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round">
-                  <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
-                  <circle cx="12" cy="7" r="4" />
-                </svg>
-                <span>Login</span>
-              </Link>
-              <Link href="/signup" className="nav-cta" onClick={closeMenu} style={{ width: "100%", textAlign: "center" }}>
-                Get started
-              </Link>
-            </>
+            <div style={{ display: "flex", flexDirection: "column", gap: "8px", width: "100%" }}>
+              <a href="/login" className="nav-cta nav-login-text" onClick={closeMenu} style={{ width: "100%", textAlign: "center", background: "transparent", border: "1.5px solid #2563EB", color: "#2563EB" }}>Log In</a>
+              <a href="/signup" className="nav-cta" onClick={closeMenu} style={{ width: "100%", textAlign: "center" }}>Sign Up</a>
+            </div>
           )}
         </div>
       )}

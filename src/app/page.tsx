@@ -12,9 +12,9 @@ import { HowItWorks } from "@/components/HowItWorks";
 import { Testimonials } from "@/components/Testimonials";
 import { Solutions } from "@/components/Solutions";
 import { WhyVifems } from "@/components/WhyVifems";
+import { PricingSection } from "@/components/PricingSection";
 import { TrustSection } from "@/components/TrustSection";
 import { CtaSection } from "@/components/CtaSection";
-import { PricingSection } from "@/components/PricingSection";
 import { Footer } from "@/components/Footer";
 
 export default function Home() {
@@ -89,18 +89,6 @@ export default function Home() {
       }
     );
 
-    // --- 3. STATS STRIP ---
-    document.querySelectorAll<HTMLElement>(".stats-strip [data-count]").forEach((el) => {
-      ScrollTrigger.create({
-        trigger: el,
-        start: "top 90%",
-        once: true,
-        onEnter: () => {
-          animateCount(el);
-        },
-      });
-    });
-
     // --- 4. REVEAL ANIMATIONS (Always ending in opacity: 1) ---
     document.querySelectorAll<HTMLElement>(".reveal, .reveal-l, .reveal-r").forEach((el) => {
       gsap.fromTo(
@@ -148,8 +136,8 @@ export default function Home() {
       <Testimonials />
       <Solutions />
       <WhyVifems />
-      <TrustSection />
       <PricingSection />
+      <TrustSection />
       <CtaSection />
       <Footer />
     </main>

@@ -1,0 +1,240 @@
+/* Public Registration Page Styles - Clean, Mobile-first, Royal Blue Accent */
+
+.pub-reg-root {
+  min-height: 100vh;
+  background: #f8fafc;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  color: #0f172a;
+}
+
+.pub-reg-card {
+  width: 100%;
+  max-width: 580px;
+  background: #ffffff;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06), 0 1px 3px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.pub-reg-header {
+  background: linear-gradient(135deg, #0a1b47 0%, #1e3a8a 100%);
+  padding: 32px 28px 24px;
+  color: #ffffff;
+  position: relative;
+}
+
+.pub-reg-org-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 9999px;
+  padding: 4px 12px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #ffffff;
+  margin-bottom: 12px;
+  letter-spacing: 0.3px;
+}
+
+.pub-reg-title {
+  font-size: 22px;
+  font-weight: 700;
+  margin: 0 0 6px 0;
+  color: #ffffff;
+  letter-spacing: -0.3px;
+}
+
+.pub-reg-subtitle {
+  font-size: 14px;
+  color: #bfdbfe;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.pub-reg-meta-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 12px;
+  margin-top: 16px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.15);
+  font-size: 12px;
+  color: #e2e8f0;
+}
+
+.pub-reg-meta-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.pub-reg-body {
+  padding: 28px;
+}
+
+.pub-form-group {
+  margin-bottom: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pub-form-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #334155;
+}
+
+.pub-form-label .req {
+  color: #dc2626;
+  margin-left: 2px;
+}
+
+.pub-form-input,
+.pub-form-select,
+.pub-form-textarea {
+  width: 100%;
+  padding: 10px 14px;
+  border: 1.5px solid #cbd5e1;
+  border-radius: 8px;
+  font-size: 14px;
+  color: #0f172a;
+  background: #ffffff;
+  outline: none;
+  transition: all 0.15s ease;
+  box-sizing: border-box;
+  font-family: inherit;
+}
+
+.pub-form-input:focus,
+.pub-form-select:focus,
+.pub-form-textarea:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.12);
+}
+
+.pub-form-input::placeholder,
+.pub-form-textarea::placeholder {
+  color: #94a3b8;
+}
+
+.pub-form-textarea {
+  resize: vertical;
+  min-height: 80px;
+}
+
+.pub-submit-btn {
+  width: 100%;
+  padding: 12px 20px;
+  background: #1e3a8a;
+  color: #ffffff;
+  border: none;
+  border-radius: 8px;
+  font-size: 15px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.05s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  margin-top: 10px;
+  box-shadow: 0 4px 12px rgba(30, 58, 138, 0.2);
+}
+
+.pub-submit-btn:hover {
+  background: #1d4ed8;
+}
+
+.pub-submit-btn:active {
+  transform: translateY(1px);
+}
+
+.pub-submit-btn:disabled {
+  background: #94a3b8;
+  cursor: not-allowed;
+  box-shadow: none;
+}
+
+/* Success & State Boxes */
+.pub-status-box {
+  padding: 40px 24px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.pub-status-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 16px;
+}
+
+.pub-status-icon.success {
+  background: #f0fdf4;
+  color: #16a34a;
+  border: 2px solid #bbf7d0;
+}
+
+.pub-status-icon.error {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 2px solid #fecaca;
+}
+
+.pub-status-title {
+  font-size: 19px;
+  font-weight: 700;
+  color: #0f172a;
+  margin: 0 0 8px 0;
+}
+
+.pub-status-desc {
+  font-size: 14px;
+  color: #64748b;
+  line-height: 1.5;
+  margin: 0 0 20px 0;
+  max-width: 420px;
+}
+
+.pub-reg-footer {
+  margin-top: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.pub-reg-footer a {
+  color: #1e3a8a;
+  text-decoration: none;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .pub-reg-card {
+    border-radius: 12px;
+  }
+  .pub-reg-header {
+    padding: 24px 20px 18px;
+  }
+  .pub-reg-title {
+    font-size: 19px;
+  }
+  .pub-reg-body {
+    padding: 20px;
+  }
+}

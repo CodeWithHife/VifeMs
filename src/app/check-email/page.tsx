@@ -159,11 +159,11 @@ function CheckEmailContent() {
               )}
 
               <Link
-                href="/login"
+                href="/onboarding"
                 className="btn btn-primary"
                 style={{ width: '100%', display: 'inline-block', textAlign: 'center' }}
               >
-                Proceed to Login
+                Proceed to Onboarding
               </Link>
             </div>
 

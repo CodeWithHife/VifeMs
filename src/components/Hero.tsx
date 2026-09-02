@@ -2,8 +2,10 @@
 
 import React, { useState, useEffect } from "react";
 import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
 export const Hero: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [displayText, setDisplayText] = useState("");
   const [isTyping, setIsTyping] = useState(true);
   const fullText = "Manage. Simplify. Grow.";
@@ -112,13 +114,13 @@ export const Hero: React.FC = () => {
 
         {/* Action CTAs with animated icons & spring hover */}
         <div className="hero-actions">
-          <Link href="/signup" className="hero-btn-main">
-            <span>Start free trial</span>
+          <a href={isAuthenticated ? "/dashboard" : "/signup"} className="hero-btn-main">
+            <span>{isAuthenticated ? "Go to Dashboard" : "Start free trial"}</span>
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2.2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="hero-arrow-icon">
               <line x1="5" y1="12" x2="19" y2="12"></line>
               <polyline points="12 5 19 12 12 19"></polyline>
             </svg>
-          </Link>
+          </a>
           <a href="#how" className="hero-btn-sec">
             <svg viewBox="0 0 24 24" width="18" height="18" stroke="currentColor" strokeWidth="2" fill="none" strokeLinecap="round" strokeLinejoin="round" className="hero-play-icon">
               <circle cx="12" cy="12" r="10"></circle>
@@ -128,7 +130,7 @@ export const Hero: React.FC = () => {
           </a>
         </div>
 
-        <p className="hero-note" style={{ marginTop: "12px" }}>No credit card required.</p>
+        <p className="hero-note" style={{ marginTop: "12px" }}>{isAuthenticated ? "Welcome back! Your workspace is ready." : "No credit card required."}</p>
       </div>
     </header>
   );

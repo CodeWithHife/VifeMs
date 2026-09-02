@@ -1,9 +1,8 @@
 'use client';
 
 import React, { useState } from "react";
-import Link from "next/link";
+import { useAuth } from "@/context/AuthContext";
 
-const WAITLIST_URL = "https://forms.gle/JPKbeY9pMyTMSXN98";
 const SETUP_FEE = 5000;
 const MODULE_PRICE = 5000;
 
@@ -113,6 +112,7 @@ function formatNaira(amount: number) {
 }
 
 export const PricingSection: React.FC = () => {
+  const { isAuthenticated } = useAuth();
   const [selected, setSelected] = useState<string[]>(["participants", "training", "attendance"]);
 
   const toggle = (id: string) => {
@@ -232,17 +232,19 @@ export const PricingSection: React.FC = () => {
                   </div>
                 </div>
 
-                <Link
-                  href="/signup"
+                <a
+                  href={isAuthenticated ? "/dashboard" : "/signup"}
+                  target={isAuthenticated ? "_self" : "_blank"}
+                  rel="noopener noreferrer"
                   className="calc-cta-btn"
                   id="pricing-get-started"
                 >
-                  <span>Get Started</span>
+                  <span>{isAuthenticated ? "Go to Dashboard" : "Get Started"}</span>
                   <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12" />
                     <polyline points="12 5 19 12 12 19" />
                   </svg>
-                </Link>
+                </a>
                 <p className="calc-note">No credit card required. Cancel anytime.</p>
               </div>
             </div>

@@ -1,436 +1,576 @@
 'use client';
 
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { onboardingService } from '@/services/onboarding.service';
+import { tokenStorage } from '@/lib/api';
+import {
+  MODULE_CATALOG,
+  BUSINESS_TYPE_PRESETS,
+  EntityConfig,
+  EntityFieldDefinition,
+} from '@/lib/moduleCatalog';
+import {
+  getOrgModuleCatalog,
+  buildInitialModuleStates,
+  ALL_MODULE_METADATA,
+} from '@/lib/orgModuleCatalog';
 import {
   BusinessInfo,
   TeamMember,
-  ModuleConfig,
+  ModuleItem,
 } from '@/types/onboarding';
-import {
-  ZapIcon,
-  BuildingIcon,
-  TargetIcon,
-  UsersIcon,
-  SlidersIcon,
-  CheckCircleIcon,
-  SparklesIcon,
-  ShieldIcon,
-  ManagerIcon,
-  StaffIcon,
-  ShoppingBagIcon,
-  GraduationCapIcon,
-  UtensilsIcon,
-  PaletteIcon,
-  BriefcaseIcon,
-  HeartPulseIcon,
-  ConstructionIcon,
-  TruckIcon,
-  PackageIcon,
-  ClipboardListIcon,
-  UserCheckIcon,
-  CreditCardIcon,
-  CalendarIcon,
-  RocketIcon,
-  BarChartIcon,
-  BellIcon,
-} from '@/components/icons/OnboardingIcons';
-import { saveWorkspaceStore, getCurrencySymbol } from '@/lib/dashboardStore';
-import { StaffMember } from '@/types/dashboard';
 import './onboarding.css';
 
-// Demo initial defaults
-const DEMO_BUSINESS_INFO: BusinessInfo = {
-  name: 'Acme Global Ventures',
-  logo: '',
-  email: 'hello@acmeglobal.com',
-  phone: '+234 801 234 5678',
-  address: '14 Marina Commercial Boulevard',
+// SVG Icon Components (100% Vector, Zero Emojis)
+const Icons = {
+  Zap: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2" />
+    </svg>
+  ),
+  Building: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect x="4" y="2" width="16" height="20" rx="2" ry="2" />
+      <path d="M9 22v-4h6v4" />
+      <path d="M8 6h.01M16 6h.01M8 10h.01M16 10h.01M16 14h.01" />
+    </svg>
+  ),
+  GraduationCap: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 10v6M2 10l10-5 10 5-10 5z" />
+      <path d="M6 12v5c3 3 9 3 12 0v-5" />
+    </svg>
+  ),
+  ShoppingBag: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M6 2 3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4Z" />
+      <path d="M3 6h18" />
+      <path d="M16 10a4 4 0 0 1-8 0" />
+    </svg>
+  ),
+  Briefcase: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="14" x="2" y="7" rx="2" ry="2" />
+      <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16" />
+    </svg>
+  ),
+  Layers: () => (
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polygon points="12 2 2 7 12 12 22 7 12 2" />
+      <polyline points="2 17 12 22 22 17" />
+      <polyline points="2 12 12 17 22 12" />
+    </svg>
+  ),
+  Users: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2" />
+      <circle cx="9" cy="7" r="4" />
+      <path d="M22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75" />
+    </svg>
+  ),
+  BookOpen: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z" />
+      <path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z" />
+    </svg>
+  ),
+  Clock: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <circle cx="12" cy="12" r="10" />
+      <polyline points="12 6 12 12 16 14" />
+    </svg>
+  ),
+  CreditCard: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <rect width="20" height="14" x="2" y="5" rx="2" />
+      <line x1="2" x2="22" y1="10" y2="10" />
+    </svg>
+  ),
+  Folder: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 19a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5l2 3h9a2 2 0 0 1 2 2z" />
+    </svg>
+  ),
+  Package: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="m7.5 4.27 9 5.15" />
+      <path d="M21 8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16Z" />
+      <path d="m3.3 7 8.7 5 8.7-5" />
+      <path d="M12 22V12" />
+    </svg>
+  ),
+  CheckSquare: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="9 11 12 14 22 4" />
+      <path d="M21 12v7a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11" />
+    </svg>
+  ),
+  FileText: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" />
+      <polyline points="14 2 14 8 20 8" />
+      <line x1="16" y1="13" x2="8" y2="13" />
+      <line x1="16" y1="17" x2="8" y2="17" />
+    </svg>
+  ),
+  DollarSign: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="1" x2="12" y2="23" />
+      <path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+    </svg>
+  ),
+  BarChart: () => (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="20" x2="12" y2="10" />
+      <line x1="18" y1="20" x2="18" y2="4" />
+      <line x1="6" y1="20" x2="6" y2="16" />
+    </svg>
+  ),
+  CheckCircle: () => (
+    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
+      <polyline points="22 4 12 14.01 9 11.01" />
+    </svg>
+  ),
+  Trash: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="3 6 5 6 21 6" />
+      <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+    </svg>
+  ),
+  Plus: () => (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <line x1="12" y1="5" x2="12" y2="19" />
+      <line x1="5" y1="12" x2="19" y2="12" />
+    </svg>
+  ),
+  Check: () => (
+    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+      <polyline points="20 6 9 17 4 12" />
+    </svg>
+  ),
+};
+
+const getModuleIcon = (key: string) => {
+  switch (key) {
+    case 'PARTICIPANTS': return <Icons.Users />;
+    case 'STUDENTS': return <Icons.GraduationCap />;
+    case 'TRAINING': return <Icons.BookOpen />;
+    case 'PROGRAMS': return <Icons.BookOpen />;
+    case 'CLASSES': return <Icons.Layers />;
+    case 'ACADEMIC_SESSIONS': return <Icons.Clock />;
+    case 'SUBJECTS': return <Icons.BookOpen />;
+    case 'RESULTS': return <Icons.BarChart />;
+    case 'ATTENDANCE': return <Icons.Clock />;
+    case 'PAYMENTS': return <Icons.CreditCard />;
+    case 'FEES': return <Icons.CreditCard />;
+    case 'LIBRARY': return <Icons.BookOpen />;
+    case 'SCHOOL_HEALTH': return <Icons.Zap />;
+    case 'GUIDANCE': return <Icons.Users />;
+    case 'CUSTOMERS': return <Icons.Folder />;
+    case 'INVENTORY': return <Icons.Package />;
+    case 'PRODUCTS': return <Icons.ShoppingBag />;
+    case 'ORDERS': return <Icons.FileText />;
+    case 'SUPPLIERS': return <Icons.Package />;
+    case 'DISCOUNTS': return <Icons.DollarSign />;
+    case 'TASKS': return <Icons.CheckSquare />;
+    case 'INVOICES': return <Icons.FileText />;
+    case 'FINANCE': return <Icons.DollarSign />;
+    case 'STAFF': return <Icons.Users />;
+    case 'TRAINERS': return <Icons.Users />;
+    case 'COHORTS': return <Icons.Users />;
+    case 'CERTIFICATES': return <Icons.CheckSquare />;
+    case 'PROGRESS_TRACKING': return <Icons.BarChart />;
+    case 'REPORTS': return <Icons.BarChart />;
+    default: return <Icons.Layers />;
+  }
+};
+
+const DEMO_PRESETS: BusinessInfo = {
+  name: 'Victor Training Academy',
+  email: 'info@vifems.com',
+  phone: '+2348000000000',
+  address: '123 Business Way',
   country: 'Nigeria',
   state: 'Lagos',
-  website: 'https://acmeglobal.com',
+  website: 'https://vifems.com',
   currency: 'NGN',
   timeZone: 'Africa/Lagos',
 };
 
-// Business type dropdown options
-export interface BusinessTypeOption {
-  value: string;
-  label: string;
-  badge: string;
-  description: string;
-  iconType: 'retail' | 'school' | 'restaurant' | 'agency' | 'services' | 'health' | 'construction' | 'logistics' | 'other';
-  recommendedModules: string[];
-}
-
-const BUSINESS_TYPE_OPTIONS: BusinessTypeOption[] = [
-  {
-    value: 'Retail',
-    label: 'Retail & E-commerce',
-    badge: 'Commerce',
-    description: 'Physical stores, online shops, supermarkets, and merchandise distribution.',
-    iconType: 'retail',
-    recommendedModules: ['TASKS', 'CUSTOMERS', 'FINANCE', 'INVENTORY', 'REPORTS', 'NOTIFICATIONS'],
-  },
-  {
-    value: 'School',
-    label: 'School & Education',
-    badge: 'Education',
-    description: 'K-12 schools, training institutes, academies, and tutoring centers.',
-    iconType: 'school',
-    recommendedModules: ['TASKS', 'CUSTOMERS', 'STAFF', 'FINANCE', 'REPORTS', 'NOTIFICATIONS'],
-  },
-  {
-    value: 'Restaurant',
-    label: 'Restaurant & Hospitality',
-    badge: 'Hospitality',
-    description: 'Restaurants, cafes, food chains, catering services, and bars.',
-    iconType: 'restaurant',
-    recommendedModules: ['TASKS', 'STAFF', 'INVENTORY', 'FINANCE', 'REPORTS'],
-  },
-  {
-    value: 'Agency',
-    label: 'Agency & Creative Studio',
-    badge: 'Creative',
-    description: 'Digital agencies, marketing firms, software houses, and design studios.',
-    iconType: 'agency',
-    recommendedModules: ['TASKS', 'CUSTOMERS', 'PROJECTS', 'FINANCE', 'REPORTS', 'NOTIFICATIONS'],
-  },
-  {
-    value: 'Professional services',
-    label: 'Professional Services',
-    badge: 'Services',
-    description: 'Law firms, accounting practices, consulting, and advisory offices.',
-    iconType: 'services',
-    recommendedModules: ['TASKS', 'CUSTOMERS', 'APPOINTMENTS', 'FINANCE', 'REPORTS', 'NOTIFICATIONS'],
-  },
-  {
-    value: 'Healthcare',
-    label: 'Healthcare & Clinic',
-    badge: 'Health',
-    description: 'Medical practices, dental clinics, wellness centers, and pharmacies.',
-    iconType: 'health',
-    recommendedModules: ['STAFF', 'CUSTOMERS', 'APPOINTMENTS', 'INVENTORY', 'NOTIFICATIONS'],
-  },
-  {
-    value: 'Construction',
-    label: 'Construction & Real Estate',
-    badge: 'Industrial',
-    description: 'General contractors, architectural firms, property managers, and builders.',
-    iconType: 'construction',
-    recommendedModules: ['TASKS', 'PROJECTS', 'STAFF', 'INVENTORY', 'FINANCE', 'REPORTS'],
-  },
-  {
-    value: 'Logistics',
-    label: 'Logistics & Transportation',
-    badge: 'Supply Chain',
-    description: 'Couriers, haulage, dispatch networks, and supply chain operators.',
-    iconType: 'logistics',
-    recommendedModules: ['TASKS', 'STAFF', 'INVENTORY', 'CUSTOMERS', 'REPORTS', 'NOTIFICATIONS'],
-  },
-  {
-    value: 'Other',
-    label: 'Other Business Type',
-    badge: 'General',
-    description: 'Custom organizations, non-profits, associations, and multi-disciplinary teams.',
-    iconType: 'other',
-    recommendedModules: ['TASKS', 'CUSTOMERS', 'STAFF', 'FINANCE', 'REPORTS', 'NOTIFICATIONS'],
-  },
-];
-
-// Helper to render Business Type Icon
-const renderBusinessTypeIcon = (iconType: string, size = 20) => {
-  switch (iconType) {
-    case 'retail':
-      return <ShoppingBagIcon size={size} />;
-    case 'school':
-      return <GraduationCapIcon size={size} />;
-    case 'restaurant':
-      return <UtensilsIcon size={size} />;
-    case 'agency':
-      return <PaletteIcon size={size} />;
-    case 'services':
-      return <BriefcaseIcon size={size} />;
-    case 'health':
-      return <HeartPulseIcon size={size} />;
-    case 'construction':
-      return <ConstructionIcon size={size} />;
-    case 'logistics':
-      return <TruckIcon size={size} />;
-    case 'other':
-    default:
-      return <PackageIcon size={size} />;
-  }
-};
-
-// Helper to render Module Icon
-const renderModuleIcon = (key: string, size = 22) => {
-  switch (key) {
-    case 'TASKS':
-      return <ClipboardListIcon size={size} />;
-    case 'CUSTOMERS':
-      return <UserCheckIcon size={size} />;
-    case 'STAFF':
-      return <UsersIcon size={size} />;
-    case 'FINANCE':
-      return <CreditCardIcon size={size} />;
-    case 'INVENTORY':
-      return <PackageIcon size={size} />;
-    case 'APPOINTMENTS':
-      return <CalendarIcon size={size} />;
-    case 'PROJECTS':
-      return <RocketIcon size={size} />;
-    case 'REPORTS':
-      return <BarChartIcon size={size} />;
-    case 'NOTIFICATIONS':
-      return <BellIcon size={size} />;
-    default:
-      return <SlidersIcon size={size} />;
-  }
-};
-
-// All 9 Modules
-const INITIAL_MODULES: ModuleConfig[] = [
-  {
-    key: 'TASKS',
-    name: 'Tasks',
-    description: 'Assign, track, and manage team tasks, checklists, and internal workflows.',
-    enabled: true,
-  },
-  {
-    key: 'CUSTOMERS',
-    name: 'Customers',
-    description: 'Client profiles, interaction history, contact directory, and CRM communications.',
-    enabled: true,
-  },
-  {
-    key: 'STAFF',
-    name: 'Staff',
-    description: 'Employee profiles, attendance tracking, shift scheduling, and role assignments.',
-    enabled: true,
-  },
-  {
-    key: 'FINANCE',
-    name: 'Finance',
-    description: 'Invoicing, automated billing, payment collection, revenue & expense tracking.',
-    enabled: true,
-  },
-  {
-    key: 'INVENTORY',
-    name: 'Inventory',
-    description: 'Real-time stock tracking, product catalog, supplier orders, and low-stock alerts.',
-    enabled: true,
-  },
-  {
-    key: 'APPOINTMENTS',
-    name: 'Appointments',
-    description: 'Online booking calendar, appointment schedules, and automated reminders.',
-    enabled: false,
-  },
-  {
-    key: 'PROJECTS',
-    name: 'Projects',
-    description: 'Milestones, project deliverables, client approvals, and timeline tracking.',
-    enabled: false,
-  },
-  {
-    key: 'REPORTS',
-    name: 'Reports',
-    description: 'Operational analytics, performance metrics, financial summaries, and data exports.',
-    enabled: true,
-  },
-  {
-    key: 'NOTIFICATIONS',
-    name: 'Notifications',
-    description: 'Automated email alerts, SMS reminders, and multi-channel system notifications.',
-    enabled: true,
-  },
-];
-
 export default function OnboardingPage() {
   const router = useRouter();
-  const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const [currentStep, setCurrentStep] = useState<number>(0);
+  const [currentStep, setCurrentStep] = useState<number>(1);
+  const [isLoadingStatus, setIsLoadingStatus] = useState<boolean>(true);
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [successToast, setSuccessToast] = useState<string | null>(null);
+  const [isCompleted, setIsCompleted] = useState<boolean>(false);
 
-  // Form States
+  // Organization Type State (new granular field)
+  const [organizationType, setOrganizationType] = useState<string>('');
+  const [customOrganizationType, setCustomOrganizationType] = useState<string>('');
+  const [orgTypeError, setOrgTypeError] = useState<string | null>(null);
+
+  // Business Type State (internal preset key — derived from organizationType)
+  const [selectedBusinessType, setSelectedBusinessType] = useState<string>('TRAINING');
+
+  // Map from organizationType -> business preset key for module defaults
+  const ORG_TYPE_PRESET_MAP: Record<string, string> = {
+    school: 'TRAINING',
+    training: 'TRAINING',
+    business: 'SERVICES',
+    retail: 'RETAIL',
+    healthcare: 'SERVICES',
+    hospitality: 'SERVICES',
+    professional_services: 'SERVICES',
+    nonprofit: 'TRAINING',
+    custom: 'CUSTOM',
+  };
+
+  // Business Info State
   const [businessInfo, setBusinessInfo] = useState<BusinessInfo>({
     name: '',
-    logo: '',
     email: '',
     phone: '',
     address: '',
     country: 'Nigeria',
-    state: 'Lagos',
+    state: '',
     website: '',
     currency: 'NGN',
     timeZone: 'Africa/Lagos',
   });
 
-  const [selectedBusinessType, setSelectedBusinessType] = useState<string>('Retail');
+  // Entity Configuration State
+  const [entityConfig, setEntityConfig] = useState<EntityConfig>(
+    BUSINESS_TYPE_PRESETS.TRAINING.defaultEntityConfig
+  );
+  const [newFieldLabel, setNewFieldLabel] = useState<string>('');
+  const [newFieldType, setNewFieldType] = useState<EntityFieldDefinition['type']>('text');
+  const [newFieldRequired, setNewFieldRequired] = useState<boolean>(false);
 
+  // Team Members State
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
-    { email: '', role: 'Manager' },
+    { email: 'trainer@vifems.com', role: 'ADMIN', department: 'Operations' },
   ]);
 
-  const [modules, setModules] = useState<ModuleConfig[]>(INITIAL_MODULES);
+  // Modules State — dynamically initialized based on org type
+  const [moduleStates, setModuleStates] = useState<Record<string, boolean>>(() =>
+    buildInitialModuleStates('training')
+  );
 
-  // Fetch current onboarding status on load if available
-  useEffect(() => {
-    async function checkStatus() {
-      try {
-        const res = await onboardingService.getStatus();
-        if (res.status === 'COMPLETED') {
-          setCurrentStep(5);
-        } else if (res.business) {
-          setBusinessInfo((prev) => ({
-            ...prev,
-            ...res.business,
-          }));
-        }
-      } catch (err) {
-        console.log('Onboarding status check skipped:', err);
-      }
+  // Step 1: Handle org type dropdown change
+  const handleOrgTypeChange = (orgType: string) => {
+    setOrganizationType(orgType);
+    setOrgTypeError(null);
+    if (orgType !== 'custom') setCustomOrganizationType('');
+
+    const presetKey = ORG_TYPE_PRESET_MAP[orgType] || 'CUSTOM';
+    setSelectedBusinessType(presetKey);
+
+    // Set specific entityConfig presets for schools vs general
+    if (orgType === 'school') {
+      setEntityConfig({
+        entityLabel: 'Student',
+        entityLabelPlural: 'Students',
+        fields: [
+          { key: 'fullName', label: 'Student Full Name', type: 'text', required: true, enabled: true, order: 1 },
+          { key: 'email', label: 'Student / Guardian Email', type: 'email', required: false, enabled: true, order: 2 },
+          { key: 'phone', label: 'Parent / Guardian Phone', type: 'phone', required: false, enabled: true, order: 3 },
+          { key: 'admissionNumber', label: 'Admission / Student ID', type: 'text', required: false, enabled: true, order: 4 },
+          { key: 'gradeLevel', label: 'Grade / Class Level', type: 'text', required: false, enabled: true, order: 5 },
+          { key: 'gender', label: 'Gender', type: 'select', options: ['Male', 'Female'], required: false, enabled: true, order: 6 },
+          { key: 'dob', label: 'Date of Birth', type: 'date', required: false, enabled: true, order: 7 },
+        ],
+      });
+    } else if (orgType === 'healthcare') {
+      setEntityConfig({
+        entityLabel: 'Patient',
+        entityLabelPlural: 'Patients',
+        fields: [
+          { key: 'fullName', label: 'Full Name', type: 'text', required: true, enabled: true, order: 1 },
+          { key: 'email', label: 'Email Address', type: 'email', required: false, enabled: true, order: 2 },
+          { key: 'phone', label: 'Phone Number', type: 'phone', required: true, enabled: true, order: 3 },
+          { key: 'dob', label: 'Date of Birth', type: 'date', required: false, enabled: true, order: 4 },
+          { key: 'bloodGroup', label: 'Blood Group', type: 'select', options: ['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'], required: false, enabled: true, order: 5 },
+          { key: 'emergencyContact', label: 'Emergency Contact', type: 'phone', required: false, enabled: true, order: 6 },
+        ],
+      });
+    } else {
+      const preset = BUSINESS_TYPE_PRESETS[presetKey] || BUSINESS_TYPE_PRESETS.CUSTOM;
+      setEntityConfig(preset.defaultEntityConfig);
     }
-    checkStatus();
-  }, []);
 
-  const triggerToast = (msg: string) => {
-    setSuccessToast(msg);
-    setTimeout(() => setSuccessToast(null), 3000);
+    // Safely reset module states to the new org type catalog (core = true, optional = false)
+    // Ensures selections from a previous org type (e.g. Library) do NOT linger
+    setModuleStates(buildInitialModuleStates(orgType));
   };
 
-  // Quick Auto-fill Demo Data handler
-  const handleAutoFillDemo = () => {
-    setBusinessInfo(DEMO_BUSINESS_INFO);
-    setSelectedBusinessType('Retail');
-    setTeamMembers([
-      { email: 'sarah.manager@acmeglobal.com', role: 'Manager' },
-      { email: 'david.ops@acmeglobal.com', role: 'Staff' },
-    ]);
-    setModules(INITIAL_MODULES);
-    setErrorMsg(null);
-    triggerToast('Demo information filled successfully!');
+  // Legacy: kept for auto-fill and backward compat
+  const handleSelectBusinessType = (key: string) => {
+    setSelectedBusinessType(key);
+    const preset = BUSINESS_TYPE_PRESETS[key] || BUSINESS_TYPE_PRESETS.CUSTOM;
+    setEntityConfig(preset.defaultEntityConfig);
+    setModuleStates(buildInitialModuleStates(key.toLowerCase()));
   };
 
-  // Logo Upload handler
-  const handleLogoUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      if (file.size > 2 * 1024 * 1024) {
-        setErrorMsg('Logo file size should be less than 2MB.');
+  // Field Config Helpers
+  const handleToggleField = (fieldKey: string) => {
+    setEntityConfig((prev) => ({
+      ...prev,
+      fields: prev.fields.map((f) =>
+        f.key === fieldKey ? { ...f, enabled: !f.enabled } : f
+      ),
+    }));
+  };
+
+  const handleAddField = () => {
+    if (!newFieldLabel.trim()) return;
+    const cleanKey = newFieldLabel.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    const uniqueKey = `${cleanKey}_${Date.now().toString().slice(-4)}`;
+
+    const newField: EntityFieldDefinition = {
+      key: uniqueKey,
+      label: newFieldLabel.trim(),
+      type: newFieldType,
+      required: newFieldRequired,
+      enabled: true,
+      order: entityConfig.fields.length + 1,
+    };
+
+    setEntityConfig((prev) => ({
+      ...prev,
+      fields: [...prev.fields, newField],
+    }));
+
+    setNewFieldLabel('');
+    setNewFieldRequired(false);
+  };
+
+  const handleRemoveField = (fieldKey: string) => {
+    setEntityConfig((prev) => ({
+      ...prev,
+      fields: prev.fields.filter((f) => f.key !== fieldKey),
+    }));
+  };
+
+  // Team Helpers
+  const addTeamMember = () => {
+    setTeamMembers([...teamMembers, { email: '', role: 'MEMBER', department: 'General' }]);
+  };
+
+  const removeTeamMember = (index: number) => {
+    setTeamMembers(teamMembers.filter((_, i) => i !== index));
+  };
+
+  const updateTeamMember = (index: number, field: keyof TeamMember, value: string) => {
+    const updated = [...teamMembers];
+    updated[index] = { ...updated[index], [field]: value };
+    setTeamMembers(updated);
+  };
+
+  // Initial status fetch
+  useEffect(() => {
+    const fetchStatus = async () => {
+      const token = tokenStorage.getToken();
+      if (!token) {
+        router.push('/login?redirect=/onboarding');
         return;
       }
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setBusinessInfo((prev) => ({
-          ...prev,
-          logo: reader.result as string,
-        }));
-        setErrorMsg(null);
-      };
-      reader.readAsDataURL(file);
+
+      setIsLoadingStatus(true);
+      try {
+        const res = await onboardingService.getStatus();
+        if (res.business) {
+          const b = res.business;
+          setBusinessInfo({
+            name: b.name || '',
+            email: b.email || '',
+            phone: b.phone || '',
+            address: b.address || '',
+            country: b.country || 'Nigeria',
+            state: b.state || '',
+            website: b.website || '',
+            currency: b.currency || 'NGN',
+            timeZone: b.timeZone || 'Africa/Lagos',
+          });
+
+          if (b.organizationType) {
+            setOrganizationType(b.organizationType);
+            if (b.customOrganizationType) setCustomOrganizationType(b.customOrganizationType);
+            const initialStates = buildInitialModuleStates(b.organizationType);
+            if (Array.isArray(b.modules) && b.modules.length > 0) {
+              b.modules.forEach((m: any) => {
+                initialStates[m.moduleKey] = !!m.isEnabled;
+              });
+            }
+            setModuleStates(initialStates);
+          } else if (Array.isArray(b.modules) && b.modules.length > 0) {
+            const modMap: Record<string, boolean> = {};
+            b.modules.forEach((m: any) => {
+              modMap[m.moduleKey] = !!m.isEnabled;
+            });
+            setModuleStates((prev) => ({ ...prev, ...modMap }));
+          }
+
+          if (b.businessType) {
+            setSelectedBusinessType(b.businessType);
+            if (b.entityConfig && Array.isArray(b.entityConfig.fields)) {
+              setEntityConfig(b.entityConfig);
+            } else {
+              const preset = BUSINESS_TYPE_PRESETS[b.businessType] || BUSINESS_TYPE_PRESETS.CUSTOM;
+              setEntityConfig(preset.defaultEntityConfig);
+            }
+          }
+
+          const searchParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+          const isReonboard = searchParams?.get('reonboard') === 'true' || searchParams?.get('edit') === 'true';
+
+          if (isReonboard) {
+            setIsCompleted(false);
+            setCurrentStep(1);
+          } else if (res.status === 'COMPLETED' || b.isCompleted) {
+            setIsCompleted(true);
+          } else if (res.status === 'MODULES') {
+            setCurrentStep(5);
+          } else if (res.status === 'TEAM_SETUP') {
+            setCurrentStep(4);
+          } else if (res.status === 'ENTITY_CONFIG') {
+            setCurrentStep(4);
+          } else if (res.status === 'BUSINESS_INFO') {
+            setCurrentStep(3);
+          } else if (res.status === 'BUSINESS_TYPE') {
+            setCurrentStep(2);
+          }
+        }
+      } catch (err: any) {
+        console.warn('Unable to load onboarding status:', err);
+      } finally {
+        setIsLoadingStatus(false);
+      }
+    };
+
+    fetchStatus();
+  }, [router]);
+
+  // Demo auto-fill
+  const handleAutoFillDemo = () => {
+    handleSelectBusinessType('TRAINING');
+    setBusinessInfo(DEMO_PRESETS);
+    setTeamMembers([
+      { email: 'trainer@vifems.com', role: 'ADMIN', department: 'Instruction' },
+      { email: 'sarah.ade@vifems.com', role: 'MEMBER', department: 'Operations' },
+    ]);
+    setErrorMsg(null);
+  };
+
+  // Step 1 Submit: Organization Type
+  const handleStep1Submit = async () => {
+    setOrgTypeError(null);
+    setErrorMsg(null);
+
+    // Validate
+    if (!organizationType) {
+      setOrgTypeError('Please select your organization type.');
+      return;
+    }
+    if (organizationType === 'custom' && !customOrganizationType.trim()) {
+      setOrgTypeError('Please describe what type of organization you run.');
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      await onboardingService.saveBusinessType({
+        organizationType,
+        customOrganizationType: organizationType === 'custom' ? customOrganizationType.trim() : undefined,
+      });
+      setCurrentStep(2);
+    } catch (err: any) {
+      setErrorMsg(err.message || 'Failed to save organization type.');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
-  const removeLogo = () => {
-    setBusinessInfo((prev) => ({ ...prev, logo: '' }));
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  // Step 1 Submission: PUT /api/onboarding/business-info
-  const handleStep1Submit = async (e: React.FormEvent) => {
+  // Step 2 Submit: Business Info
+  const handleStep2Submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg(null);
 
-    if (!businessInfo.name.trim()) {
-      setErrorMsg('Business name is required.');
+    const name = businessInfo.name.trim();
+    const email = businessInfo.email.trim();
+
+    if (!name) {
+      setErrorMsg('Organization or business name is required.');
       return;
     }
-    if (!businessInfo.email.trim()) {
-      setErrorMsg('Business email is required.');
+    if (!email || !/^\S+@\S+\.\S+$/.test(email)) {
+      setErrorMsg('A valid work email address is required.');
       return;
     }
 
     setIsSubmitting(true);
     try {
-      await onboardingService.saveBusinessInfo(businessInfo);
-      setCurrentStep(2);
+      await onboardingService.saveBusinessInfo({
+        name,
+        email,
+        phone: businessInfo.phone.trim(),
+        address: businessInfo.address.trim(),
+        country: businessInfo.country.trim() || 'Nigeria',
+        state: businessInfo.state.trim(),
+        website: businessInfo.website?.trim() || '',
+        currency: businessInfo.currency || 'NGN',
+        timeZone: businessInfo.timeZone || 'Africa/Lagos',
+      });
+      setCurrentStep(3);
     } catch (err: any) {
-      console.warn('API saveBusinessInfo warning:', err);
-      setCurrentStep(2);
+      setErrorMsg(err.message || 'Failed to save business profile.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Step 2 Submission: PUT /api/onboarding/business-type
-  const handleStep2Submit = async () => {
-    setErrorMsg(null);
-    if (!selectedBusinessType) {
-      setErrorMsg('Please select a business type.');
-      return;
-    }
-
-    const matchedType = BUSINESS_TYPE_OPTIONS.find((t) => t.value === selectedBusinessType);
-    if (matchedType) {
-      setModules((prev) =>
-        prev.map((m) => ({
-          ...m,
-          enabled: matchedType.recommendedModules.includes(m.key),
-        }))
-      );
-    }
-
-    setIsSubmitting(true);
-    try {
-      await onboardingService.saveBusinessType({ businessType: selectedBusinessType });
-      setCurrentStep(3);
-    } catch (err: any) {
-      console.warn('API saveBusinessType warning:', err);
-      setCurrentStep(3);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  // Step 3 Submission: POST /api/onboarding/team
+  // Step 3 Submit: Entity Configuration
   const handleStep3Submit = async () => {
     setErrorMsg(null);
-    const validMembers = teamMembers.filter((m) => m.email.trim() !== '');
+    if (!entityConfig.entityLabel.trim()) {
+      setErrorMsg('Primary record label cannot be empty.');
+      return;
+    }
 
     setIsSubmitting(true);
     try {
-      if (validMembers.length > 0) {
-        await onboardingService.inviteTeam({ members: validMembers });
+      await onboardingService.saveEntityConfig({
+        entityLabel: entityConfig.entityLabel.trim(),
+        entityLabelPlural: entityConfig.entityLabelPlural?.trim() || `${entityConfig.entityLabel.trim()}s`,
+        fields: entityConfig.fields,
+      });
+
+      // Persist in localStorage for instant client hydration
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('vifems_customer_fields_config', JSON.stringify(entityConfig));
       }
+
       setCurrentStep(4);
     } catch (err: any) {
-      console.warn('API inviteTeam warning:', err);
-      setCurrentStep(4);
+      setErrorMsg(err.message || 'Failed to save entity configuration.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleSkipTeam = () => {
-    setErrorMsg(null);
-    setCurrentStep(4);
-  };
-
-  // Step 4 Submission: PUT /api/onboarding/modules
+  // Step 4 Submit: Modules Selection
   const handleStep4Submit = async () => {
     setErrorMsg(null);
-    const payloadModules = modules.map((m) => ({
+    const orgCatalog = getOrgModuleCatalog(organizationType || 'training');
+    const allCatalogModules = [...orgCatalog.core, ...orgCatalog.optional];
+
+    const payloadModules: ModuleItem[] = allCatalogModules.map((m) => ({
       key: m.key,
-      enabled: m.enabled,
+      enabled: m.isCore ? true : !!moduleStates[m.key],
     }));
 
     setIsSubmitting(true);
@@ -438,954 +578,724 @@ export default function OnboardingPage() {
       await onboardingService.configureModules({ modules: payloadModules });
       setCurrentStep(5);
     } catch (err: any) {
-      console.warn('API configureModules warning:', err);
-      setCurrentStep(5);
+      setErrorMsg(err.message || 'Failed to save module selection.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Final Step 5 Submission: POST /api/onboarding/complete
+  // Step 6 Submit: Complete Onboarding & Activate Workspace
   const handleFinalComplete = async () => {
     setErrorMsg(null);
     setIsSubmitting(true);
-
-    const validMembers = teamMembers.filter((m) => m.email.trim() !== '');
-    const adminName = businessInfo.name ? `${businessInfo.name} Owner` : 'Workspace Admin';
-    const adminAvatar = (businessInfo.name ? businessInfo.name.substring(0, 2) : 'WA').toUpperCase();
-
-    const staffList: StaffMember[] = [
-      {
-        id: 'STF-01',
-        name: adminName,
-        email: businessInfo.email || 'admin@business.com',
-        phone: businessInfo.phone || '+234 800 000 0000',
-        role: 'Administrator',
-        department: 'Executive Operations',
-        status: 'Active',
-        tasksAssigned: 0,
-        tasksCompleted: 0,
-        lastActive: 'Just now',
-        joinedDate: new Date().toISOString().split('T')[0],
-        permissions: ['ALL_PERMISSIONS'],
-      },
-      ...validMembers.map((m, idx) => ({
-        id: `STF-0${idx + 2}`,
-        name: m.email.split('@')[0],
-        email: m.email,
-        phone: '+234 800 000 0000',
-        role: m.role as any,
-        department: m.role === 'Manager' ? 'Operations' : 'Staff Operations',
-        status: 'Active' as const,
-        tasksAssigned: 0,
-        tasksCompleted: 0,
-        lastActive: 'Just invited',
-        joinedDate: new Date().toISOString().split('T')[0],
-        permissions: m.role === 'Administrator' ? ['ALL_PERMISSIONS'] : ['VIEW_TASKS', 'EDIT_TASKS'],
-      })),
-    ];
-
-    saveWorkspaceStore({
-      organization: {
-        name: businessInfo.name || 'My Business',
-        logo: businessInfo.logo || '/logo/logo.png',
-        email: businessInfo.email || 'contact@mybusiness.com',
-        phone: businessInfo.phone || '+234 800 000 0000',
-        address: businessInfo.address || 'Commercial Hub',
-        country: businessInfo.country || 'Nigeria',
-        state: businessInfo.state || 'Lagos',
-        website: businessInfo.website || 'https://mybusiness.com',
-        currency: businessInfo.currency || 'NGN',
-        timeZone: businessInfo.timeZone || 'Africa/Lagos',
-        businessType: selectedBusinessType || 'General Business',
-      },
-      user: {
-        name: adminName,
-        email: businessInfo.email || 'admin@business.com',
-        phone: businessInfo.phone || '+234 800 000 0000',
-        role: 'Administrator',
-        avatar: adminAvatar,
-        department: 'Executive Operations',
-      },
-      tasks: [],
-      customers: [],
-      staff: staffList,
-      transactions: [],
-      invoices: [],
-      reports: [
-        {
-          id: 'REP-01',
-          title: 'Monthly Revenue & Margin Performance',
-          category: 'Financial',
-          summary: `Financial overview and operating margins for ${businessInfo.name || 'your workspace'}.`,
-          dateRange: 'Current Month',
-          generatedDate: new Date().toISOString().split('T')[0],
-          metrics: [
-            { title: 'Gross Revenue', value: `${getCurrencySymbol(businessInfo.currency)}0`, change: '0%', trend: 'neutral', description: 'initial balance' },
-            { title: 'Net Margin', value: '0%', change: '0%', trend: 'neutral', description: 'margin baseline' },
-          ],
-        },
-      ],
-      notifications: [
-        {
-          id: 'notif-welcome',
-          category: 'System',
-          title: `Welcome to ${businessInfo.name || 'your workspace'}!`,
-          description: `Your ${selectedBusinessType} workspace is active and initialized.`,
-          time: 'Just now',
-          read: false,
-        },
-      ],
-      activities: [
-        {
-          id: 'act-1',
-          userName: adminName,
-          userRole: 'Administrator',
-          action: `Completed business onboarding for ${businessInfo.name || 'Workspace'}`,
-          recordAffected: 'Workspace Configuration',
-          module: 'Settings',
-          timestamp: 'Just now',
-          ipAddress: '127.0.0.1',
-        },
-      ],
-      isConfigured: true,
-    });
-
     try {
-      await onboardingService.completeOnboarding();
-      triggerToast('Workspace successfully initialized! Redirecting to dashboard...');
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
+      const res = await onboardingService.completeOnboarding();
+      if (typeof window !== 'undefined' && res.entity) {
+        localStorage.setItem('vifems_customer_fields_config', JSON.stringify(res.entity));
+      }
+      setIsCompleted(true);
     } catch (err: any) {
-      console.warn('API completeOnboarding warning:', err);
-      triggerToast('Workspace successfully initialized! Redirecting to dashboard...');
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 1000);
+      setErrorMsg(err.message || 'Failed to complete workspace activation.');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // Team members helper
-  const addTeamMemberRow = () => {
-    setTeamMembers([...teamMembers, { email: '', role: 'Staff' }]);
-  };
-
-  const removeTeamMemberRow = (index: number) => {
-    setTeamMembers(teamMembers.filter((_, i) => i !== index));
-  };
-
-  const updateTeamMember = (index: number, field: 'email' | 'role', value: string) => {
-    const updated = [...teamMembers];
-    updated[index][field] = value;
-    setTeamMembers(updated);
-  };
-
-  // Module toggle helper
-  const toggleModule = (key: string) => {
-    setModules(
-      modules.map((m) => (m.key === key ? { ...m, enabled: !m.enabled } : m))
+  if (isLoadingStatus) {
+    return (
+      <div className="onboarding-root" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div
+            style={{
+              width: '48px',
+              height: '48px',
+              border: '3.5px solid #e2e8f0',
+              borderTopColor: '#1a3a8a',
+              borderRadius: '50%',
+              animation: 'spin 0.8s linear infinite',
+              margin: '0 auto 16px auto',
+            }}
+          />
+          <p style={{ color: '#64748b', fontWeight: 500, fontSize: '0.95rem' }}>Loading your workspace setup...</p>
+        </div>
+      </div>
     );
-  };
+  }
 
-  const currentBusinessTypeObj = BUSINESS_TYPE_OPTIONS.find(
-    (t) => t.value === selectedBusinessType
-  ) || BUSINESS_TYPE_OPTIONS[0];
+  const currentPreset = BUSINESS_TYPE_PRESETS[selectedBusinessType] || BUSINESS_TYPE_PRESETS.TRAINING;
+  const currentOrgCatalog = getOrgModuleCatalog(organizationType || 'training');
+  const enabledModuleCount =
+    currentOrgCatalog.core.length +
+    currentOrgCatalog.optional.filter((m) => !!moduleStates[m.key]).length;
 
-  const isSetupActive = currentStep >= 1 && currentStep <= 5;
-  const progressPercent = isSetupActive ? ((currentStep - 1) / 4) * 100 : 0;
 
   return (
     <div className="onboarding-root">
-      {/* Dynamic Ambient Glow Blobs */}
-      <div className="onboarding-blob onboarding-blob-1"></div>
-      <div className="onboarding-blob onboarding-blob-2"></div>
-      <div className="onboarding-blob onboarding-blob-3"></div>
-
       {/* Top Navbar */}
       <header className="onboarding-navbar">
-        <Link href="/" className="onboarding-logo" title="VIFEMS Home">
-          <img src="/logo/logo.png" alt="VIFEMS Logo" />
+        <Link href="/" className="onboarding-logo" title="VIFEmS Platform">
+          <img src="/logo/logo.png" alt="VIFEmS Logo" />
         </Link>
-        <div className="onboarding-nav-right">
-          {currentStep < 5 && (
-            <button
-              type="button"
-              className="onboarding-quick-demo-btn"
-              onClick={handleAutoFillDemo}
-              title="Pre-fill sample business details for testing"
-            >
-              <ZapIcon size={16} />
-              <span>Fill Demo Info</span>
-            </button>
-          )}
-          <Link href="/" className="onboarding-nav-exit">
-            Exit to Site ✕
-          </Link>
-        </div>
+        <button
+          type="button"
+          className="onboarding-quick-demo-btn"
+          onClick={handleAutoFillDemo}
+          title="Auto-fill recommended training academy configuration"
+        >
+          <Icons.Zap />
+          <span>Auto-fill Demo Data</span>
+        </button>
       </header>
 
-      {/* Toast Notification */}
-      {successToast && (
-        <div className="onboarding-toast">
-          <CheckCircleIcon size={18} />
-          <span>{successToast}</span>
-        </div>
-      )}
-
       {/* Main Container */}
-      <div className="onboarding-container">
-        {/* PROGRESS STEPPER (Displayed for steps 1-5) */}
-        {isSetupActive && currentStep < 5 && (
-          <div className="onboarding-progress-card">
-            <div className="stepper-header">
-              <div
-                className="stepper-progress-line"
-                style={{ width: `calc(${progressPercent}% * 0.82)` }}
-              ></div>
-
-              <div
-                className={`step-item ${currentStep === 1 ? 'active' : ''} ${currentStep > 1 ? 'completed' : ''}`}
-                onClick={() => setCurrentStep(1)}
-              >
-                <div className="step-circle">{currentStep > 1 ? <CheckCircleIcon size={16} /> : '1'}</div>
-                <span className="step-label">1. Business Info</span>
-              </div>
-
-              <div
-                className={`step-item ${currentStep === 2 ? 'active' : ''} ${currentStep > 2 ? 'completed' : ''}`}
-                onClick={() => currentStep > 1 && setCurrentStep(2)}
-              >
-                <div className="step-circle">{currentStep > 2 ? <CheckCircleIcon size={16} /> : '2'}</div>
-                <span className="step-label">2. Business Type</span>
-              </div>
-
-              <div
-                className={`step-item ${currentStep === 3 ? 'active' : ''} ${currentStep > 3 ? 'completed' : ''}`}
-                onClick={() => currentStep > 2 && setCurrentStep(3)}
-              >
-                <div className="step-circle">{currentStep > 3 ? <CheckCircleIcon size={16} /> : '3'}</div>
-                <span className="step-label">3. Team</span>
-              </div>
-
-              <div
-                className={`step-item ${currentStep === 4 ? 'active' : ''} ${currentStep > 4 ? 'completed' : ''}`}
-                onClick={() => currentStep > 3 && setCurrentStep(4)}
-              >
-                <div className="step-circle">{currentStep > 4 ? <CheckCircleIcon size={16} /> : '4'}</div>
-                <span className="step-label">4. Modules</span>
-              </div>
-
-              <div
-                className={`step-item ${currentStep === 5 ? 'active' : ''}`}
-                onClick={() => currentStep > 4 && setCurrentStep(5)}
-              >
-                <div className="step-circle">5</div>
-                <span className="step-label">5. Preferences</span>
-              </div>
+      <main className="onboarding-container">
+        {/* Completion Screen */}
+        {isCompleted ? (
+          <div className="onboarding-card completion-screen animate-fade-up">
+            <div className="completion-icon">
+              <Icons.CheckCircle />
             </div>
-          </div>
-        )}
-
-        {/* Global Error Banner */}
-        {errorMsg && (
-          <div className="onboarding-error-banner" role="alert">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <circle cx="12" cy="12" r="10" />
-              <line x1="12" y1="8" x2="12" y2="12" />
-              <line x1="12" y1="16" x2="12.01" y2="16" />
-            </svg>
-            <span>{errorMsg}</span>
-          </div>
-        )}
-
-        {/* ============================================================
-            PAGE 07: WELCOME / SETUP (Step 0)
-           ============================================================ */}
-        {currentStep === 0 && (
-          <div className="onboarding-card welcome-step-card">
-            <div className="welcome-hero-badge">
-              <SparklesIcon size={16} />
-              <span>Workspace Onboarding</span>
-            </div>
-
-            <h1 className="welcome-title">
-              Let&apos;s get your business <span>ready.</span>
-            </h1>
-
-            <p className="welcome-subtitle">
-              Welcome to VIFEMS. We&apos;ll configure your workspace in just a few quick steps to streamline your operations, team, and daily workflows.
+            <h2>Workspace Activated!</h2>
+            <p>
+              Your VIFEmS workspace <strong>{businessInfo.name || 'Organization Workspace'}</strong> is fully configured and ready for your team.
             </p>
-
-            {/* Checklist items */}
-            <div className="setup-checklist-box">
-              <h3 className="checklist-heading">Setup Checklist</h3>
-              <div className="checklist-items">
-                <div className="checklist-row">
-                  <div className="checklist-icon-box">
-                    <BuildingIcon size={18} />
-                  </div>
-                  <div className="checklist-text">
-                    <strong>1. Business Information</strong>
-                    <span>Organization name, logo, contact, location & currency</span>
-                  </div>
-                </div>
-
-                <div className="checklist-row">
-                  <div className="checklist-icon-box">
-                    <TargetIcon size={18} />
-                  </div>
-                  <div className="checklist-text">
-                    <strong>2. Business Type</strong>
-                    <span>Select your industry to optimize dashboard configuration</span>
-                  </div>
-                </div>
-
-                <div className="checklist-row">
-                  <div className="checklist-icon-box">
-                    <UsersIcon size={18} />
-                  </div>
-                  <div className="checklist-text">
-                    <strong>3. Team</strong>
-                    <span>Invite administrators, managers, and staff members</span>
-                  </div>
-                </div>
-
-                <div className="checklist-row">
-                  <div className="checklist-icon-box">
-                    <SlidersIcon size={18} />
-                  </div>
-                  <div className="checklist-text">
-                    <strong>4. Modules</strong>
-                    <span>Enable or customize the specific tools your business needs</span>
-                  </div>
-                </div>
-
-                <div className="checklist-row">
-                  <div className="checklist-icon-box">
-                    <SparklesIcon size={18} />
-                  </div>
-                  <div className="checklist-text">
-                    <strong>5. Preferences & Launch</strong>
-                    <span>Review configuration summary and start running in minutes</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="welcome-actions">
-              <button
-                type="button"
-                className="btn-onboarding-next welcome-btn"
-                onClick={() => setCurrentStep(1)}
-              >
-                <span>Get Started &rarr;</span>
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================
-            PAGE 08: BUSINESS PROFILE SETUP (Step 1)
-           ============================================================ */}
-        {currentStep === 1 && (
-          <div className="onboarding-card">
-            <div className="card-title-section">
-              <div className="step-badge">Step 1 of 5</div>
-              <h2>
-                <BuildingIcon size={26} className="title-lead-icon" />
-                Business Profile Setup
-              </h2>
-              <p>Enter your core company information and upload your business logo.</p>
-            </div>
-
-            <form onSubmit={handleStep1Submit}>
-              {/* Business Logo Upload Zone */}
-              <div className="logo-upload-section">
-                <label className="logo-label">Business Logo</label>
-                <div className="logo-uploader-box">
-                  <div className="logo-preview-area">
-                    {businessInfo.logo ? (
-                      <div className="logo-preview-wrapper">
-                        <img src={businessInfo.logo} alt="Business Logo" className="logo-preview-img" />
-                        <button
-                          type="button"
-                          className="logo-remove-btn"
-                          onClick={removeLogo}
-                          title="Remove logo"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ) : (
-                      <div className="logo-placeholder">
-                        <BuildingIcon size={28} className="logo-placeholder-svg" />
-                        <span className="logo-placeholder-text">No Logo Uploaded</span>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="logo-upload-controls">
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      id="business-logo-input"
-                      accept="image/png, image/jpeg, image/svg+xml, image/webp"
-                      onChange={handleLogoUpload}
-                      style={{ display: 'none' }}
-                    />
-                    <button
-                      type="button"
-                      className="btn-upload-logo"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                        <polyline points="17 8 12 3 7 8" />
-                        <line x1="12" y1="3" x2="12" y2="15" />
-                      </svg>
-                      {businessInfo.logo ? 'Change Logo' : 'Upload Logo'}
-                    </button>
-                    <p className="logo-hint">Supports PNG, JPG, SVG or WebP up to 2MB.</p>
-                  </div>
-                </div>
-              </div>
-
-              <div className="onboarding-grid-2">
-                <div className="onboarding-form-group onboarding-grid-full">
-                  <label htmlFor="business-name">
-                    Business Name <span className="req">*</span>
-                  </label>
-                  <input
-                    id="business-name"
-                    type="text"
-                    className="onboarding-input"
-                    placeholder="e.g. Acme Global Ventures"
-                    value={businessInfo.name}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, name: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="onboarding-form-group">
-                  <label htmlFor="business-email">
-                    Business Email <span className="req">*</span>
-                  </label>
-                  <input
-                    id="business-email"
-                    type="email"
-                    className="onboarding-input"
-                    placeholder="contact@yourbusiness.com"
-                    value={businessInfo.email}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, email: e.target.value })}
-                    required
-                  />
-                </div>
-
-                <div className="onboarding-form-group">
-                  <label htmlFor="business-phone">Phone Number</label>
-                  <input
-                    id="business-phone"
-                    type="tel"
-                    className="onboarding-input"
-                    placeholder="+234 800 000 0000"
-                    value={businessInfo.phone}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, phone: e.target.value })}
-                  />
-                </div>
-
-                <div className="onboarding-form-group onboarding-grid-full">
-                  <label htmlFor="business-address">Business Address</label>
-                  <input
-                    id="business-address"
-                    type="text"
-                    className="onboarding-input"
-                    placeholder="e.g. 14 Marina Commercial Boulevard"
-                    value={businessInfo.address}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, address: e.target.value })}
-                  />
-                </div>
-
-                <div className="onboarding-form-group">
-                  <label htmlFor="business-country">Country</label>
-                  <select
-                    id="business-country"
-                    className="onboarding-select"
-                    value={businessInfo.country}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, country: e.target.value })}
-                  >
-                    <option value="Nigeria">Nigeria</option>
-                    <option value="United States">United States</option>
-                    <option value="United Kingdom">United Kingdom</option>
-                    <option value="Ghana">Ghana</option>
-                    <option value="Kenya">Kenya</option>
-                    <option value="South Africa">South Africa</option>
-                    <option value="Canada">Canada</option>
-                    <option value="Germany">Germany</option>
-                    <option value="United Arab Emirates">United Arab Emirates</option>
-                    <option value="Other">Other Country</option>
-                  </select>
-                </div>
-
-                <div className="onboarding-form-group">
-                  <label htmlFor="business-state">State / Region</label>
-                  <input
-                    id="business-state"
-                    type="text"
-                    className="onboarding-input"
-                    placeholder="e.g. Lagos"
-                    value={businessInfo.state}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, state: e.target.value })}
-                  />
-                </div>
-
-                <div className="onboarding-form-group onboarding-grid-full">
-                  <label htmlFor="business-website">Website URL</label>
-                  <input
-                    id="business-website"
-                    type="url"
-                    className="onboarding-input"
-                    placeholder="https://yourbusiness.com"
-                    value={businessInfo.website}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, website: e.target.value })}
-                  />
-                </div>
-
-                <div className="onboarding-form-group">
-                  <label htmlFor="business-currency">Currency</label>
-                  <select
-                    id="business-currency"
-                    className="onboarding-select"
-                    value={businessInfo.currency}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, currency: e.target.value })}
-                  >
-                    <option value="NGN">NGN (₦ - Nigerian Naira)</option>
-                    <option value="USD">USD ($ - US Dollar)</option>
-                    <option value="EUR">EUR (€ - Euro)</option>
-                    <option value="GBP">GBP (£ - British Pound)</option>
-                    <option value="KES">KES (KSh - Kenyan Shilling)</option>
-                    <option value="GHS">GHS (GH₵ - Ghanaian Cedi)</option>
-                    <option value="CAD">CAD (C$ - Canadian Dollar)</option>
-                    <option value="ZAR">ZAR (R - South African Rand)</option>
-                  </select>
-                </div>
-
-                <div className="onboarding-form-group">
-                  <label htmlFor="business-timezone">Time Zone</label>
-                  <select
-                    id="business-timezone"
-                    className="onboarding-select"
-                    value={businessInfo.timeZone}
-                    onChange={(e) => setBusinessInfo({ ...businessInfo, timeZone: e.target.value })}
-                  >
-                    <option value="Africa/Lagos">Africa/Lagos (WAT, UTC+1)</option>
-                    <option value="UTC">UTC / GMT</option>
-                    <option value="America/New_York">America/New_York (EST, UTC-5)</option>
-                    <option value="Europe/London">Europe/London (BST/GMT, UTC+0/+1)</option>
-                    <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
-                    <option value="Africa/Johannesburg">Africa/Johannesburg (SAST, UTC+2)</option>
-                    <option value="Asia/Dubai">Asia/Dubai (GST, UTC+4)</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="onboarding-footer-actions">
-                <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(0)}>
-                  &larr; Back
-                </button>
-                <button type="submit" className="btn-onboarding-next" disabled={isSubmitting}>
-                  {isSubmitting ? 'Saving...' : 'Save & Continue →'}
-                </button>
-              </div>
-            </form>
-          </div>
-        )}
-
-        {/* ============================================================
-            PAGE 09: SELECT BUSINESS TYPE (Step 2 - Dropdown)
-           ============================================================ */}
-        {currentStep === 2 && (
-          <div className="onboarding-card">
-            <div className="card-title-section">
-              <div className="step-badge">Step 2 of 5</div>
-              <h2>
-                <TargetIcon size={26} className="title-lead-icon" />
-                Select Business Type
-              </h2>
-              <p>Business type determines available modules and dashboard configuration.</p>
-            </div>
-
-            <div className="business-type-dropdown-section">
-              <div className="onboarding-form-group">
-                <label htmlFor="business-type-select">
-                  Select your Business Category <span className="req">*</span>
-                </label>
-                <div className="select-with-icon-wrapper">
-                  <span className="select-lead-icon-svg">
-                    {renderBusinessTypeIcon(currentBusinessTypeObj.iconType, 20)}
-                  </span>
-                  <select
-                    id="business-type-select"
-                    className="onboarding-select custom-type-select"
-                    value={selectedBusinessType}
-                    onChange={(e) => setSelectedBusinessType(e.target.value)}
-                  >
-                    {BUSINESS_TYPE_OPTIONS.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label} ({opt.badge})
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Dynamic Information Card for Chosen Category */}
-              <div className="type-preview-card">
-                <div className="type-preview-top">
-                  <div className="type-preview-badge">{currentBusinessTypeObj.badge}</div>
-                  <div className="type-preview-icon-wrapper">
-                    {renderBusinessTypeIcon(currentBusinessTypeObj.iconType, 24)}
-                  </div>
-                </div>
-                <h3 className="type-preview-title">{currentBusinessTypeObj.label}</h3>
-                <p className="type-preview-desc">{currentBusinessTypeObj.description}</p>
-
-                <div className="type-preview-recommended">
-                  <span className="recommended-label">Recommended Workspace Modules:</span>
-                  <div className="recommended-tags">
-                    {currentBusinessTypeObj.recommendedModules.map((modKey) => {
-                      const mod = INITIAL_MODULES.find((m) => m.key === modKey);
-                      return (
-                        <span key={modKey} className="recommended-tag">
-                          {renderModuleIcon(modKey, 14)}
-                          <span>{mod?.name || modKey}</span>
-                        </span>
-                      );
-                    })}
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="onboarding-footer-actions">
-              <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(1)}>
-                &larr; Back
-              </button>
+            <div style={{ display: 'flex', gap: '16px', justifyContent: 'center', marginTop: '28px' }}>
               <button
                 type="button"
                 className="btn-onboarding-next"
-                onClick={handleStep2Submit}
-                disabled={isSubmitting}
+                onClick={() => router.push('/dashboard')}
+                style={{ padding: '14px 36px', fontSize: '1rem', fontWeight: 700 }}
               >
-                {isSubmitting ? 'Saving...' : 'Continue to Team →'}
+                Go to Workspace Dashboard →
               </button>
             </div>
           </div>
-        )}
-
-        {/* ============================================================
-            PAGE 10: TEAM SETUP (Step 3)
-           ============================================================ */}
-        {currentStep === 3 && (
-          <div className="onboarding-card">
-            <div className="card-title-section">
-              <div className="step-badge">Step 3 of 5</div>
-              <h2>
-                <UsersIcon size={26} className="title-lead-icon" />
-                Team Setup
-              </h2>
-              <p>Invite team members with role-based access permissions.</p>
+        ) : (
+          <>
+            {/* Stepper Progress Card */}
+            <div className="onboarding-progress-card">
+              <div className="stepper-header">
+                {[
+                  { step: 1, label: 'Model' },
+                  { step: 2, label: 'Profile' },
+                  { step: 3, label: 'Entity' },
+                  { step: 4, label: 'Modules' },
+                  { step: 5, label: 'Review' },
+                ].map((s) => {
+                  const isDone = currentStep > s.step;
+                  const isActive = currentStep === s.step;
+                  return (
+                    <div
+                      key={s.step}
+                      className={`step-item ${isDone ? 'step-completed' : ''} ${isActive ? 'step-active' : ''}`}
+                    >
+                      <div className="step-circle">
+                        {isDone ? <Icons.Check /> : s.step}
+                      </div>
+                      <span className="step-label">{s.label}</span>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
 
-            <div className="team-setup-container">
-              <div className="team-list-header">
-                <span>Staff Email</span>
-                <span>Role Selector</span>
-                <span>Action</span>
+            {/* Error Banner */}
+            {errorMsg && (
+              <div className="auth-error-banner" role="alert" style={{ marginBottom: '20px' }}>
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                  <circle cx="12" cy="12" r="10" />
+                  <line x1="12" y1="8" x2="12" y2="12" />
+                  <line x1="12" y1="16" x2="12.01" y2="16" />
+                </svg>
+                <span>{errorMsg}</span>
               </div>
+            )}
 
-              {teamMembers.map((member, index) => (
-                <div key={index} className="team-member-row">
-                  <div className="team-email-col">
-                    <input
-                      type="email"
-                      className="onboarding-input"
-                      placeholder="colleague@yourbusiness.com"
-                      value={member.email}
-                      onChange={(e) => updateTeamMember(index, 'email', e.target.value)}
-                    />
-                  </div>
+            {/* =========================================================================
+                STEP 1: BUSINESS TYPE PRESET
+                ========================================================================= */}
+            {currentStep === 1 && (
+              <div className="onboarding-card animate-fade-up">
+                <div className="step-heading">
+                  <span className="step-badge">Step 1 of 5</span>
+                  <h2>Tell us about your organization</h2>
+                  <p>What type of organization do you run? This helps us customize your VIFEmS workspace.</p>
+                </div>
 
-                  <div className="team-role-col">
+                <div className="form-field-group" style={{ marginBottom: '0' }}>
+                  <label htmlFor="orgTypeSelect">
+                    What type of organization do you run? <span className="req">*</span>
+                  </label>
+                  <div className="org-type-select-wrapper">
                     <select
-                      className="onboarding-select"
-                      value={member.role}
-                      onChange={(e) => updateTeamMember(index, 'role', e.target.value)}
+                      id="orgTypeSelect"
+                      className={`org-type-select${orgTypeError ? ' has-error' : ''}`}
+                      value={organizationType}
+                      onChange={(e) => handleOrgTypeChange(e.target.value)}
                     >
-                      <option value="Administrator">Administrator (Full Access)</option>
-                      <option value="Manager">Manager (Operations & Reports)</option>
-                      <option value="Staff">Staff (Daily Tasks & Shifts)</option>
+                      <option value="">Select organization type</option>
+                      <option value="school">School / Educational Institution</option>
+                      <option value="training">Training / Coaching</option>
+                      <option value="business">Business / Company</option>
+                      <option value="retail">Retail / E-commerce</option>
+                      <option value="healthcare">Healthcare / Medical</option>
+                      <option value="hospitality">Restaurant / Hospitality</option>
+                      <option value="professional_services">Professional Services</option>
+                      <option value="nonprofit">Nonprofit / NGO</option>
+                      <option value="custom">Other / Custom Organization</option>
                     </select>
                   </div>
 
-                  <div className="team-action-col">
-                    {teamMembers.length > 1 ? (
-                      <button
-                        type="button"
-                        className="remove-member-btn"
-                        onClick={() => removeTeamMemberRow(index)}
-                        title="Remove member"
-                      >
-                        ✕
-                      </button>
-                    ) : (
-                      <div className="remove-placeholder"></div>
-                    )}
-                  </div>
-                </div>
-              ))}
-
-              <button type="button" className="add-member-btn" onClick={addTeamMemberRow}>
-                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                  <line x1="12" y1="5" x2="12" y2="19" />
-                  <line x1="5" y1="12" x2="19" y2="12" />
-                </svg>
-                <span>Add another person</span>
-              </button>
-
-              <div className="roles-guide-box">
-                <div className="role-guide-item">
-                  <ShieldIcon size={16} className="role-guide-icon" />
-                  <div>
-                    <strong>Administrator:</strong> Full workspace control, billing, settings & permissions.
-                  </div>
-                </div>
-                <div className="role-guide-item">
-                  <ManagerIcon size={16} className="role-guide-icon" />
-                  <div>
-                    <strong>Manager:</strong> Operations oversight, module configs, staff attendance & reporting.
-                  </div>
-                </div>
-                <div className="role-guide-item">
-                  <StaffIcon size={16} className="role-guide-icon" />
-                  <div>
-                    <strong>Staff:</strong> Day-to-day task workflows, appointments, shift schedules & client logs.
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            <div className="onboarding-footer-actions">
-              <div className="footer-left-group">
-                <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(2)}>
-                  &larr; Back
-                </button>
-                <button type="button" className="btn-onboarding-skip" onClick={handleSkipTeam}>
-                  Skip for now
-                </button>
-              </div>
-
-              <button
-                type="button"
-                className="btn-onboarding-next"
-                onClick={handleStep3Submit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Sending invitations...' : 'Send invitations & Continue →'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================
-            PAGE 11: MODULE CONFIGURATION (Step 4)
-           ============================================================ */}
-        {currentStep === 4 && (
-          <div className="onboarding-card">
-            <div className="card-title-section">
-              <div className="step-badge">Step 4 of 5</div>
-              <h2>
-                <SlidersIcon size={26} className="title-lead-icon" />
-                Choose Modules
-              </h2>
-              <p>Select which modules to activate for your workspace. You can change these anytime in Settings.</p>
-            </div>
-
-            <div className="modules-grid">
-              {modules.map((mod) => (
-                <div
-                  key={mod.key}
-                  className={`module-item-card ${mod.enabled ? 'active' : ''}`}
-                  onClick={() => toggleModule(mod.key)}
-                >
-                  <div className="module-info">
-                    <div className="module-icon">
-                      {renderModuleIcon(mod.key, 22)}
-                    </div>
-                    <div className="module-details">
-                      <h4>{mod.name}</h4>
-                      <p>{mod.description}</p>
-                    </div>
-                  </div>
-
-                  <label
-                    className="switch-toggle"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <input
-                      type="checkbox"
-                      checked={mod.enabled}
-                      onChange={() => toggleModule(mod.key)}
-                      aria-label={`Toggle ${mod.name} module`}
-                    />
-                    <span className="slider-round"></span>
-                  </label>
-                </div>
-              ))}
-            </div>
-
-            <div className="onboarding-footer-actions">
-              <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(3)}>
-                &larr; Back
-              </button>
-              <button
-                type="button"
-                className="btn-onboarding-next"
-                onClick={handleStep4Submit}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Saving...' : 'Review & Finalize →'}
-              </button>
-            </div>
-          </div>
-        )}
-
-        {/* ============================================================
-            PAGE 12: ONBOARDING COMPLETE / SUMMARY (Step 5)
-           ============================================================ */}
-        {currentStep === 5 && (
-          <div className="onboarding-card completion-screen">
-            <div className="completion-icon">
-              <CheckCircleIcon size={44} />
-            </div>
-            <h2 className="completion-title">Setup Complete!</h2>
-            <p className="completion-subtitle">
-              Your business workspace <strong>{businessInfo.name || 'Your Business'}</strong> is fully configured and ready for action.
-            </p>
-
-            {/* Completion Summary Container */}
-            <div className="summary-container">
-              {/* Summary Block 1: Business Profile */}
-              <div className="summary-block">
-                <div className="summary-block-header">
-                  <div className="summary-title-with-icon">
-                    <BuildingIcon size={18} />
-                    <h4>Business Profile</h4>
-                  </div>
-                  <button type="button" className="summary-edit-btn" onClick={() => setCurrentStep(1)}>
-                    Edit
-                  </button>
-                </div>
-                <div className="summary-details-grid">
-                  <div className="summary-field">
-                    <label>Business Name</label>
-                    <span>{businessInfo.name || 'Acme Global'}</span>
-                  </div>
-                  <div className="summary-field">
-                    <label>Email Address</label>
-                    <span>{businessInfo.email || 'info@acmeglobal.com'}</span>
-                  </div>
-                  <div className="summary-field">
-                    <label>Phone</label>
-                    <span>{businessInfo.phone || 'Not provided'}</span>
-                  </div>
-                  <div className="summary-field">
-                    <label>Location</label>
-                    <span>{`${businessInfo.state || 'Lagos'}, ${businessInfo.country || 'Nigeria'}`}</span>
-                  </div>
-                  <div className="summary-field">
-                    <label>Currency & Timezone</label>
-                    <span>{`${businessInfo.currency} · ${businessInfo.timeZone}`}</span>
-                  </div>
-                  {businessInfo.logo && (
-                    <div className="summary-field">
-                      <label>Brand Logo</label>
-                      <img src={businessInfo.logo} alt="Logo" className="summary-mini-logo" />
+                  {/* Reveal custom input when "Other" is selected */}
+                  {organizationType === 'custom' && (
+                    <div className="org-type-custom-reveal">
+                      <label htmlFor="customOrgType" style={{ fontSize: '13.5px', fontWeight: 600, color: '#334155', display: 'block', marginBottom: '7px' }}>
+                        Tell us what type of organization you run <span className="req">*</span>
+                      </label>
+                      <input
+                        id="customOrgType"
+                        type="text"
+                        placeholder="e.g. Gym, Church, Logistics Company..."
+                        value={customOrganizationType}
+                        onChange={(e) => { setCustomOrganizationType(e.target.value); if (orgTypeError) setOrgTypeError(null); }}
+                        style={{
+                          width: '100%',
+                          padding: '11px 14px',
+                          border: `1.5px solid ${orgTypeError ? '#ef4444' : '#e2e8f0'}`,
+                          borderRadius: '10px',
+                          fontSize: '14px',
+                          color: '#0f172a',
+                          outline: 'none',
+                        }}
+                        onFocus={(e) => { e.target.style.borderColor = '#2563eb'; e.target.style.boxShadow = '0 0 0 3px rgba(37,99,235,0.1)'; }}
+                        onBlur={(e) => { e.target.style.boxShadow = ''; if (!orgTypeError) e.target.style.borderColor = '#e2e8f0'; }}
+                      />
                     </div>
                   )}
-                </div>
-              </div>
 
-              {/* Summary Block 2: Business Type & Team */}
-              <div className="summary-block">
-                <div className="summary-block-header">
-                  <div className="summary-title-with-icon">
-                    <TargetIcon size={18} />
-                    <h4>Category & Team</h4>
-                  </div>
-                  <button type="button" className="summary-edit-btn" onClick={() => setCurrentStep(2)}>
-                    Edit
+                  {orgTypeError && (
+                    <p className="org-type-field-error">
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <circle cx="12" cy="12" r="10" /><line x1="12" y1="8" x2="12" y2="12" /><line x1="12" y1="16" x2="12.01" y2="16" />
+                      </svg>
+                      {orgTypeError}
+                    </p>
+                  )}
+                </div>
+
+                <div className="step-actions right-align" style={{ marginTop: '32px' }}>
+                  <button type="button" className="btn-onboarding-next" onClick={handleStep1Submit} disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Continue to Organization Profile →'}
                   </button>
                 </div>
-                <div className="summary-details-grid">
-                  <div className="summary-field">
-                    <label>Business Category</label>
-                    <span className="summary-type-value">
-                      {renderBusinessTypeIcon(currentBusinessTypeObj.iconType, 16)}
-                      <span>{selectedBusinessType}</span>
-                    </span>
-                  </div>
-                  <div className="summary-field">
-                    <label>Team Invitations</label>
-                    <span>
-                      {teamMembers.filter((m) => m.email.trim() !== '').length > 0
-                        ? `${teamMembers.filter((m) => m.email.trim() !== '').length} member(s) queued`
-                        : 'No team members invited (Solo setup)'}
-                    </span>
-                  </div>
-                </div>
               </div>
+            )}
 
-              {/* Summary Block 3: Active Modules */}
-              <div className="summary-block">
-                <div className="summary-block-header">
-                  <div className="summary-title-with-icon">
-                    <SlidersIcon size={18} />
-                    <h4>Active Modules ({modules.filter((m) => m.enabled).length})</h4>
-                  </div>
-                  <button type="button" className="summary-edit-btn" onClick={() => setCurrentStep(4)}>
-                    Edit
-                  </button>
+            {/* =========================================================================
+                STEP 2: BUSINESS INFORMATION
+                ========================================================================= */}
+            {currentStep === 2 && (
+              <div className="onboarding-card animate-fade-up">
+                <div className="step-heading">
+                  <span className="step-badge">Step 2 of 5</span>
+                  <h2>Organization & Workspace Profile</h2>
+                  <p>Configure your workspace details, official contact info, and regional currency settings.</p>
                 </div>
-                <div className="summary-pills">
-                  {modules
-                    .filter((m) => m.enabled)
-                    .map((m) => (
-                      <span key={m.key} className="summary-pill">
-                        {renderModuleIcon(m.key, 14)}
-                        <span>{m.name}</span>
-                      </span>
+
+                <form onSubmit={handleStep2Submit} noValidate>
+                  <div className="form-grid-2">
+                    <div className="form-field-group">
+                      <label htmlFor="bizName">
+                        Organization / Business Name <span className="req">*</span>
+                      </label>
+                      <input
+                        type="text"
+                        id="bizName"
+                        placeholder="e.g. Victor Training Academy"
+                        value={businessInfo.name}
+                        onChange={(e) => {
+                          setBusinessInfo({ ...businessInfo, name: e.target.value });
+                          if (errorMsg) setErrorMsg(null);
+                        }}
+                        required
+                      />
+                    </div>
+
+                    <div className="form-field-group">
+                      <label htmlFor="bizEmail">
+                        Work / Official Email <span className="req">*</span>
+                      </label>
+                      <input
+                        type="email"
+                        id="bizEmail"
+                        placeholder="e.g. info@vifems.com"
+                        value={businessInfo.email}
+                        onChange={(e) => {
+                          setBusinessInfo({ ...businessInfo, email: e.target.value });
+                          if (errorMsg) setErrorMsg(null);
+                        }}
+                        required
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-grid-2">
+                    <div className="form-field-group">
+                      <label htmlFor="bizPhone">Contact Phone Number</label>
+                      <input
+                        type="tel"
+                        id="bizPhone"
+                        placeholder="e.g. +2348000000000"
+                        value={businessInfo.phone}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, phone: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-field-group">
+                      <label htmlFor="bizWebsite">Official Website</label>
+                      <input
+                        type="url"
+                        id="bizWebsite"
+                        placeholder="e.g. https://vifems.com"
+                        value={businessInfo.website}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, website: e.target.value })}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="form-field-group">
+                    <label htmlFor="bizAddress">Office / Operating Address</label>
+                    <input
+                      type="text"
+                      id="bizAddress"
+                      placeholder="e.g. 123 Business Way, Victoria Island"
+                      value={businessInfo.address}
+                      onChange={(e) => setBusinessInfo({ ...businessInfo, address: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-grid-4">
+                    <div className="form-field-group">
+                      <label htmlFor="bizCountry">Country</label>
+                      <select
+                        id="bizCountry"
+                        value={businessInfo.country}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, country: e.target.value })}
+                      >
+                        <option value="Nigeria">Nigeria</option>
+                        <option value="Ghana">Ghana</option>
+                        <option value="Kenya">Kenya</option>
+                        <option value="South Africa">South Africa</option>
+                        <option value="United Kingdom">United Kingdom</option>
+                        <option value="United States">United States</option>
+                        <option value="Canada">Canada</option>
+                      </select>
+                    </div>
+
+                    <div className="form-field-group">
+                      <label htmlFor="bizState">State / Region</label>
+                      <input
+                        type="text"
+                        id="bizState"
+                        placeholder="e.g. Lagos"
+                        value={businessInfo.state}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, state: e.target.value })}
+                      />
+                    </div>
+
+                    <div className="form-field-group">
+                      <label htmlFor="bizCurrency">Base Currency</label>
+                      <select
+                        id="bizCurrency"
+                        value={businessInfo.currency}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, currency: e.target.value })}
+                      >
+                        <option value="NGN">NGN (₦)</option>
+                        <option value="USD">USD ($)</option>
+                        <option value="GBP">GBP (£)</option>
+                        <option value="EUR">EUR (€)</option>
+                        <option value="GHS">GHS (₵)</option>
+                        <option value="KES">KES (KSh)</option>
+                      </select>
+                    </div>
+
+                    <div className="form-field-group">
+                      <label htmlFor="bizTimeZone">Time Zone</label>
+                      <select
+                        id="bizTimeZone"
+                        value={businessInfo.timeZone}
+                        onChange={(e) => setBusinessInfo({ ...businessInfo, timeZone: e.target.value })}
+                      >
+                        <option value="Africa/Lagos">Africa/Lagos (WAT, UTC+1)</option>
+                        <option value="Africa/Accra">Africa/Accra (GMT, UTC+0)</option>
+                        <option value="Africa/Nairobi">Africa/Nairobi (EAT, UTC+3)</option>
+                        <option value="Europe/London">Europe/London (GMT/BST)</option>
+                        <option value="America/New_York">America/New_York (EST)</option>
+                        <option value="UTC">UTC</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div className="step-actions split-between" style={{ marginTop: '24px' }}>
+                    <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(1)}>
+                      ← Back
+                    </button>
+                    <button type="submit" className="btn-onboarding-next" disabled={isSubmitting}>
+                      {isSubmitting ? 'Saving Profile...' : 'Continue to Entity Configuration →'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            )}
+
+            {/* =========================================================================
+                STEP 3: GENERIC ENTITY CONFIGURATION
+                ========================================================================= */}
+            {currentStep === 3 && (
+              <div className="onboarding-card animate-fade-up">
+                <div className="step-heading">
+                  <span className="step-badge">Step 3 of 5</span>
+                  <h2>Configure Your Primary Business Record</h2>
+                  <p>
+                    VIFEmS does not hard-code "Customer". Configure how your organization refers to its main records (e.g. Participant, Client, Student) and select data fields to capture.
+                  </p>
+                </div>
+
+                <div className="form-grid-2" style={{ marginBottom: '20px' }}>
+                  <div className="form-field-group">
+                    <label htmlFor="entitySingular">
+                      Singular Terminology <span className="req">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      id="entitySingular"
+                      placeholder="e.g. Participant, Client, Student"
+                      value={entityConfig.entityLabel}
+                      onChange={(e) => setEntityConfig({ ...entityConfig, entityLabel: e.target.value })}
+                    />
+                  </div>
+
+                  <div className="form-field-group">
+                    <label htmlFor="entityPlural">
+                      Plural Terminology
+                    </label>
+                    <input
+                      type="text"
+                      id="entityPlural"
+                      placeholder="e.g. Participants, Clients, Students"
+                      value={entityConfig.entityLabelPlural}
+                      onChange={(e) => setEntityConfig({ ...entityConfig, entityLabelPlural: e.target.value })}
+                    />
+                  </div>
+                </div>
+
+                <div className="customer-fields-config-box">
+                  <div className="customer-fields-header">
+                    <h4>{entityConfig.entityLabel || 'Record'} Data Fields</h4>
+                    <span style={{ fontSize: '12px', color: '#64748b' }}>
+                      Click any field pill to toggle on/off
+                    </span>
+                  </div>
+
+                  <div className="customer-fields-grid">
+                    {entityConfig.fields.map((field) => (
+                      <div
+                        key={field.key}
+                        className={`field-pill-card ${field.enabled ? 'active' : ''}`}
+                        onClick={() => handleToggleField(field.key)}
+                      >
+                        <input
+                          type="checkbox"
+                          checked={field.enabled}
+                          onChange={() => {}}
+                          style={{ cursor: 'pointer' }}
+                        />
+                        <span className="field-pill-label">{field.label}</span>
+                        <span className="field-pill-type">{field.type}</span>
+                        {field.required && (
+                          <span style={{ color: '#dc2626', fontSize: '11px', fontWeight: 700 }}>*</span>
+                        )}
+                        {!['fullName', 'email'].includes(field.key) && (
+                          <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); handleRemoveField(field.key); }}
+                            style={{ background: 'none', border: 'none', color: '#94a3b8', cursor: 'pointer', padding: 2 }}
+                            title="Remove field"
+                          >
+                            ×
+                          </button>
+                        )}
+                      </div>
                     ))}
+                  </div>
+
+                  <div className="add-custom-field-row">
+                    <input
+                      type="text"
+                      placeholder="Add custom field (e.g. Sponsor Name, Graduation Cohort)..."
+                      value={newFieldLabel}
+                      onChange={(e) => setNewFieldLabel(e.target.value)}
+                      style={{ flex: 1, padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px' }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAddField();
+                        }
+                      }}
+                    />
+                    <select
+                      value={newFieldType}
+                      onChange={(e) => setNewFieldType(e.target.value as any)}
+                      style={{ padding: '8px 12px', border: '1px solid #cbd5e1', borderRadius: '8px', fontSize: '13px' }}
+                    >
+                      <option value="text">Text</option>
+                      <option value="number">Number</option>
+                      <option value="email">Email</option>
+                      <option value="phone">Phone</option>
+                      <option value="date">Date</option>
+                      <option value="select">Dropdown</option>
+                      <option value="boolean">Yes/No</option>
+                      <option value="file">File Upload</option>
+                      <option value="image">Image Upload</option>
+                    </select>
+                    <label style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '12px', color: '#475569' }}>
+                      <input
+                        type="checkbox"
+                        checked={newFieldRequired}
+                        onChange={(e) => setNewFieldRequired(e.target.checked)}
+                      />
+                      Required
+                    </label>
+                    <button type="button" className="btn-add-custom-field" onClick={handleAddField}>
+                      + Add Field
+                    </button>
+                  </div>
+                </div>
+
+                <div className="step-actions split-between" style={{ marginTop: '24px' }}>
+                  <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(2)}>
+                    ← Back
+                  </button>
+                  <button type="button" className="btn-onboarding-next" onClick={handleStep3Submit} disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : 'Continue to Modules Selection →'}
+                  </button>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Finish Action */}
-            <div className="completion-actions">
-              <button
-                type="button"
-                className="btn-onboarding-next completion-btn"
-                onClick={handleFinalComplete}
-                disabled={isSubmitting}
-              >
-                {isSubmitting ? 'Launching workspace...' : 'Go to Dashboard →'}
-              </button>
-            </div>
-          </div>
+            {/* =========================================================================
+                STEP 4: DYNAMIC ORG-TYPE MODULES SELECTION
+                ========================================================================= */}
+            {currentStep === 4 && (
+              <div className="onboarding-card animate-fade-up">
+                <div className="step-heading">
+                  <span className="step-badge">Step 4 of 5</span>
+                  <h2>Customize your workspace</h2>
+                  <p>
+                    We’ve selected the essential features that fit your organization. Choose any additional optional features you want to use.
+                  </p>
+                </div>
+
+                {/* Section 1: Core / Included Modules */}
+                <div className="module-group-section">
+                  <div className="module-group-header">
+                    <div>
+                      <h3 className="module-group-title">
+                        Core modules
+                        <span className="core-badge">Included</span>
+                      </h3>
+                      <p className="module-group-subtitle">
+                        These fundamental modules are automatically included and enabled for your workspace.
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="modules-selection-grid">
+                    {currentOrgCatalog.core.map((mod) => (
+                      <div
+                        key={mod.key}
+                        className="module-item-card core-included"
+                        title="Core module included automatically"
+                      >
+                        <div className="module-item-left">
+                          <div className="module-item-icon core-icon">{getModuleIcon(mod.key)}</div>
+                          <div className="module-info-left">
+                            <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                              <h4>{mod.name}</h4>
+                              <span className="module-category-pill">{mod.category}</span>
+                            </div>
+                            <p>{mod.description}</p>
+                          </div>
+                        </div>
+
+                        <div className="core-locked-pill">
+                          <Icons.Check />
+                          <span>Included</span>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Section 2: Optional Modules */}
+                {currentOrgCatalog.optional.length > 0 && (
+                  <div className="module-group-section" style={{ marginTop: '28px' }}>
+                    <div className="module-group-header">
+                      <div>
+                        <h3 className="module-group-title">Optional modules</h3>
+                        <p className="module-group-subtitle">
+                          Enable additional features tailored to your operations. You can always change these later in Dashboard Settings.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="modules-selection-grid">
+                      {currentOrgCatalog.optional.map((mod) => {
+                        const isEnabled = !!moduleStates[mod.key];
+                        const dependencies: Record<string, string[]> = {
+                          'RESULTS': ['Subjects'],
+                          'ATTENDANCE': ['Students', 'Classes'],
+                          'FEES': ['Students'],
+                        };
+                        const deps = dependencies[mod.key];
+
+                        return (
+                          <div
+                            key={mod.key}
+                            className={`module-item-card ${isEnabled ? 'enabled' : ''}`}
+                            onClick={() => setModuleStates({ ...moduleStates, [mod.key]: !isEnabled })}
+                          >
+                            <div className="module-item-left">
+                              <div className="module-item-icon">{getModuleIcon(mod.key)}</div>
+                              <div className="module-info-left">
+                                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                  <h4>{mod.name}</h4>
+                                  <span className="module-category-pill">{mod.category}</span>
+                                </div>
+                                <p>{mod.description}</p>
+                                {deps && (
+                                  <p style={{ fontSize: '11px', color: '#64748b', marginTop: '4px', fontStyle: 'italic' }}>
+                                    <Icons.Plus /> Requires: {deps.join(', ')} (auto-enabled)
+                                  </p>
+                                )}
+                              </div>
+                            </div>
+
+                            <label className="module-toggle" onClick={(e) => e.stopPropagation()}>
+                              <input
+                                type="checkbox"
+                                checked={isEnabled}
+                                onChange={() => setModuleStates({ ...moduleStates, [mod.key]: !isEnabled })}
+                              />
+                              <span className="toggle-slider" />
+                            </label>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                )}
+
+                <div className="step-actions split-between" style={{ marginTop: '28px' }}>
+                  <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(3)}>
+                    ← Back
+                  </button>
+                  <button type="button" className="btn-onboarding-next" onClick={handleStep4Submit} disabled={isSubmitting}>
+                    {isSubmitting ? 'Saving...' : `Review & Activate (${enabledModuleCount} Enabled) →`}
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* =========================================================================
+                STEP 5: REVIEW & WORKSPACE PREVIEW
+                ========================================================================= */}
+            {currentStep === 5 && (
+              <div className="onboarding-card animate-fade-up">
+                <div className="step-heading">
+                  <span className="step-badge">Step 5 of 5</span>
+                  <h2>Review Your VIFEmS Workspace</h2>
+                  <p>Verify your workspace configuration before final activation. You can change modules and settings at any time.</p>
+                </div>
+
+                <div className="summary-cards-grid">
+                  <div className="summary-card">
+                    <span className="summary-title">Workspace Profile</span>
+                    <h3>{businessInfo.name || 'Organization Workspace'}</h3>
+                    <p>{businessInfo.email || 'info@vifems.com'}</p>
+                    <p>{businessInfo.phone || 'No phone set'} · {businessInfo.country} ({businessInfo.currency})</p>
+                    <span className="summary-pill">{organizationType ? organizationType.toUpperCase().replace('_', ' ') : currentPreset.label}</span>
+                  </div>
+
+                  <div className="summary-card">
+                    <span className="summary-title">Configured Primary Entity</span>
+                    <h3>{entityConfig.entityLabel || 'Participant'}</h3>
+                    <p>Plural Label: <strong>{entityConfig.entityLabelPlural || 'Participants'}</strong></p>
+                    <p>Active Fields: <strong>{entityConfig.fields.filter((f) => f.enabled).length} fields configured</strong></p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginTop: '8px' }}>
+                      {entityConfig.fields.filter((f) => f.enabled).slice(0, 5).map((f) => (
+                        <span key={f.key} style={{ fontSize: '11px', background: '#e2e8f0', padding: '2px 6px', borderRadius: '4px', color: '#334155' }}>
+                          ✓ {f.label}
+                        </span>
+                      ))}
+                      {entityConfig.fields.filter((f) => f.enabled).length > 5 && (
+                        <span style={{ fontSize: '11px', color: '#64748b' }}>
+                          +{entityConfig.fields.filter((f) => f.enabled).length - 5} more
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                <div style={{ background: '#f8fafc', border: '1px solid #e2e8f0', borderRadius: '12px', padding: '18px', marginBottom: '24px' }}>
+                  <h4 style={{ margin: '0 0 10px 0', fontSize: '14px', fontWeight: 700, color: '#1e3a8a' }}>
+                    Active Workspace Modules ({enabledModuleCount})
+                  </h4>
+                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '8px' }}>
+                    {/* Render Core Modules */}
+                    {currentOrgCatalog.core.map((mod) => (
+                      <div key={mod.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: '#0f172a', fontWeight: 600 }}>
+                        <span style={{ color: '#16a34a' }}>✓</span>
+                        <span>{mod.name}</span>
+                        <span style={{ fontSize: '10px', background: '#dcfce7', color: '#15803d', padding: '1px 5px', borderRadius: '3px', fontWeight: 700 }}>
+                          Core
+                        </span>
+                      </div>
+                    ))}
+                    {/* Render Enabled Optional Modules */}
+                    {currentOrgCatalog.optional
+                      .filter((mod) => !!moduleStates[mod.key])
+                      .map((mod) => (
+                        <div key={mod.key} style={{ display: 'flex', alignItems: 'center', gap: '6px', fontSize: '12.5px', color: '#0f172a', fontWeight: 600 }}>
+                          <span style={{ color: '#2563eb' }}>✓</span>
+                          <span>{mod.name}</span>
+                          <span style={{ fontSize: '10px', background: '#eff6ff', color: '#2563eb', padding: '1px 5px', borderRadius: '3px', fontWeight: 600 }}>
+                            Optional
+                          </span>
+                        </div>
+                      ))}
+                  </div>
+                </div>
+
+                <div className="step-actions split-between">
+                  <button type="button" className="btn-onboarding-back" onClick={() => setCurrentStep(4)}>
+                    ← Back to Modules
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-onboarding-next"
+                    onClick={handleFinalComplete}
+                    disabled={isSubmitting}
+                    style={{ padding: '14px 32px', fontSize: '15px' }}
+                  >
+                    {isSubmitting ? 'Activating Workspace...' : 'Complete Setup & Activate Workspace →'}
+                  </button>
+                </div>
+              </div>
+            )}
+          </>
         )}
-      </div>
+      </main>
     </div>
   );
 }

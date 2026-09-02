@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/context/AuthContext";
 import { authService } from "@/services/auth.service";
+import { tokenStorage } from "@/lib/api";
 import "./signup.css";
 
 export default function SignupPage() {
@@ -50,10 +51,17 @@ export default function SignupPage() {
         password,
       });
 
-      router.push(`/check-email?email=${encodeURIComponent(email.trim())}`);
+      setToastMessage({
+        title: "Account Created!",
+        sub: "Check your email to verify your account before logging in.",
+      });
+
+      setTimeout(() => {
+        router.push(`/check-email?email=${encodeURIComponent(email.trim())}`);
+      }, 800);
     } catch (err: any) {
-      const msg = err.message || "Failed to create account. Please try again.";
-      setFormError(msg);
+      setFormError(err.message || "Registration failed. Please try again.");
+    } finally {
       setIsSubmitting(false);
     }
   };

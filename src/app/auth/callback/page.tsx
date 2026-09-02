@@ -25,7 +25,7 @@ function OAuthCallbackContent() {
       if (token) {
         try {
           await handleOAuthSuccess(token, refreshToken);
-          router.push('/');
+          router.push('/onboarding');
         } catch {
           setError('Failed to authenticate session with Google OAuth.');
         }
