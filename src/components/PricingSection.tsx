@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState } from "react";
+import Link from "next/link";
 import { useAuth } from "@/context/AuthContext";
+import { PaymentModal } from "./PaymentModal";
 
 const SETUP_FEE = 5000;
 const MODULE_PRICE = 5000;
@@ -114,6 +116,7 @@ function formatNaira(amount: number) {
 export const PricingSection: React.FC = () => {
   const { isAuthenticated } = useAuth();
   const [selected, setSelected] = useState<string[]>(["participants", "training", "attendance"]);
+  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
 
   const toggle = (id: string) => {
     setSelected((prev) =>
@@ -123,6 +126,11 @@ export const PricingSection: React.FC = () => {
 
   const moduleCount = selected.length;
   const monthlyTotal = moduleCount * MODULE_PRICE;
+  const grandTotal = SETUP_FEE + monthlyTotal;
+
+  const selectedModuleLabels = selected.map(
+    (id) => ALL_MODULES.find((m) => m.id === id)?.label || id
+  );
 
   return (
     <section className="pricing-section" id="pricing">
@@ -149,13 +157,31 @@ export const PricingSection: React.FC = () => {
               </div>
               <div className="pc-label">Setup</div>
               <div className="pc-price">{formatNaira(SETUP_FEE)} <span className="pc-period">Per-Month</span></div>
-              <ul className="pc-features">
+              <ul className="pc-features" style={{ marginBottom: "16px" }}>
                 <li><span className="pc-check">✓</span> Workspace setup</li>
                 <li><span className="pc-check">✓</span> Business configuration</li>
                 <li><span className="pc-check">✓</span> Admin account setup</li>
                 <li><span className="pc-check">✓</span> Basic branding</li>
                 <li><span className="pc-check">✓</span> Deployment</li>
               </ul>
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(true)}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1.5px solid #2563eb",
+                  background: "#eff6ff",
+                  color: "#1d4ed8",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+              >
+                Pay Setup Fee ({formatNaira(SETUP_FEE)}) &rarr;
+              </button>
             </div>
 
             {/* Module price card */}
@@ -170,9 +196,27 @@ export const PricingSection: React.FC = () => {
               </div>
               <div className="pc-label">Modules</div>
               <div className="pc-price">{formatNaira(MODULE_PRICE)} <span className="pc-period">/ module / month</span></div>
-              <p className="pc-module-note">
+              <p className="pc-module-note" style={{ marginBottom: "16px" }}>
                 Add only the modules your business uses. Each is billed separately — swap anytime.
               </p>
+              <button
+                type="button"
+                onClick={() => setIsPaymentModalOpen(true)}
+                style={{
+                  width: "100%",
+                  padding: "10px 14px",
+                  borderRadius: "10px",
+                  border: "1.5px solid #0891b2",
+                  background: "#ecfeff",
+                  color: "#0e7490",
+                  fontWeight: 700,
+                  fontSize: "13px",
+                  cursor: "pointer",
+                  transition: "background 0.2s",
+                }}
+              >
+                Choose Modules & Pay &rarr;
+              </button>
             </div>
           </div>
 
@@ -232,25 +276,42 @@ export const PricingSection: React.FC = () => {
                   </div>
                 </div>
 
-                <a
-                  href={isAuthenticated ? "/dashboard" : "/signup"}
-                  target={isAuthenticated ? "_self" : "_blank"}
-                  rel="noopener noreferrer"
+                <button
+                  type="button"
+                  onClick={() => setIsPaymentModalOpen(true)}
                   className="calc-cta-btn"
                   id="pricing-get-started"
+                  style={{ width: "100%", cursor: "pointer", border: "none" }}
                 >
-                  <span>{isAuthenticated ? "Go to Dashboard" : "Get Started"}</span>
+                  <span>Pay with Bank Transfer ({formatNaira(grandTotal)})</span>
                   <svg viewBox="0 0 24 24" width="17" height="17" stroke="currentColor" strokeWidth="2.5" fill="none" strokeLinecap="round" strokeLinejoin="round">
                     <line x1="5" y1="12" x2="19" y2="12" />
                     <polyline points="12 5 19 12 12 19" />
                   </svg>
-                </a>
-                <p className="calc-note">No credit card required. Cancel anytime.</p>
+                </button>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: "12px", fontSize: "12px", color: "#64748b" }}>
+                  <span>Pay to OPay: <strong>7070295803</strong></span>
+                  <Link href={`/pay?modules=${selected.join(",")}`} style={{ color: "#2563eb", fontWeight: 600, textDecoration: "underline" }}>
+                    Full payment page &rarr;
+                  </Link>
+                </div>
+                <p className="calc-note">Transfer via OPay and send proof on WhatsApp for immediate setup.</p>
               </div>
             </div>
           </div>
         </div>
       </div>
+
+      {/* Payment Modal */}
+      <PaymentModal
+        isOpen={isPaymentModalOpen}
+        onClose={() => setIsPaymentModalOpen(false)}
+        selectedModules={selectedModuleLabels}
+        setupFee={SETUP_FEE}
+        monthlyFee={monthlyTotal}
+        totalAmount={grandTotal}
+      />
     </section>
   );
 };
+
