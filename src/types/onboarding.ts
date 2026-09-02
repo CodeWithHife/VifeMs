@@ -1,6 +1,7 @@
+import { EntityConfig, EntityFieldDefinition } from '@/lib/moduleCatalog';
+
 export interface BusinessInfo {
   name: string;
-  logo?: string;
   email: string;
   phone: string;
   address: string;
@@ -12,38 +13,79 @@ export interface BusinessInfo {
 }
 
 export interface BusinessTypeData {
-  businessType: string;
+  businessType?: 'TRAINING' | 'RETAIL' | 'SERVICES' | 'CUSTOM' | string;
+  organizationType: string;
+  customOrganizationType?: string;
+}
+
+export interface EntityConfigData {
+  entityLabel: string;
+  entityLabelPlural?: string;
+  fields: EntityFieldDefinition[];
 }
 
 export interface TeamMember {
   email: string;
-  role: string;
+  role: 'OWNER' | 'ADMIN' | 'MEMBER' | 'ADMINISTRATOR' | 'MANAGER' | 'INSTRUCTOR' | 'STAFF' | string;
+  firstName?: string;
+  lastName?: string;
+  department?: string;
 }
 
 export interface TeamInviteData {
-  members: TeamMember[];
+  members: {
+    email: string;
+    role: string;
+    firstName?: string;
+    lastName?: string;
+    department?: string;
+  }[];
 }
 
-export interface ModuleConfig {
+export interface ModuleItem {
   key: string;
   enabled: boolean;
-  name?: string;
-  description?: string;
-  icon?: string;
 }
 
 export interface ModulesData {
-  modules: { key: string; enabled: boolean }[];
+  modules: ModuleItem[];
 }
 
 export interface OnboardingStatusResponse {
-  status: 'NOT_STARTED' | 'BUSINESS_INFO_ADDED' | 'BUSINESS_TYPE_SET' | 'TEAM_INVITED' | 'MODULES_CONFIGURED' | 'COMPLETED' | string;
+  status: 'NOT_STARTED' | 'BUSINESS_INFO' | 'BUSINESS_TYPE' | 'ENTITY_CONFIG' | 'TEAM_SETUP' | 'MODULES' | 'COMPLETED' | string;
+  isCompleted?: boolean;
   business?: any;
+  catalog?: any;
+  presets?: any;
   message?: string;
 }
 
 export interface ApiMessageResponse {
   message?: string;
+  business?: any;
   error?: string;
-  success?: boolean;
+  invitedCount?: number;
+  preset?: any;
+  entityConfig?: EntityConfig;
+}
+
+export interface OnboardingCompleteResponse {
+  message: string;
+  workspace: {
+    id: string;
+    name: string;
+    slug: string;
+    businessType: string;
+    status: string;
+    email?: string;
+    phone?: string;
+    currency?: string;
+    timeZone?: string;
+  };
+  entity: EntityConfig;
+  modules: {
+    key: string;
+    enabled: boolean;
+  }[];
+  userRole?: string;
 }

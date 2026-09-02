@@ -2,30 +2,30 @@ import { apiClient } from '@/lib/api';
 import {
   BusinessInfo,
   BusinessTypeData,
+  EntityConfigData,
   TeamInviteData,
   ModulesData,
   OnboardingStatusResponse,
   ApiMessageResponse,
+  OnboardingCompleteResponse,
 } from '@/types/onboarding';
 
 export const onboardingService = {
   /**
    * GET /api/onboarding/status
-   * Retrieves current onboarding status and business details
    */
   getStatus: async (): Promise<OnboardingStatusResponse> => {
-    return apiClient<OnboardingStatusResponse>('/api/onboarding/status', {
+    return await apiClient<OnboardingStatusResponse>('/api/onboarding/status', {
       method: 'GET',
       requiresAuth: true,
     });
   },
 
   /**
-   * PUT /api/onboarding/business-info
-   * Saves business details (Name, Email, Phone, Address, Country, State, Website, Currency, TimeZone)
+   * PUT /api/onboarding/business-type
    */
-  saveBusinessInfo: async (data: BusinessInfo): Promise<ApiMessageResponse> => {
-    return apiClient<ApiMessageResponse>('/api/onboarding/business-info', {
+  saveBusinessType: async (data: BusinessTypeData): Promise<ApiMessageResponse> => {
+    return await apiClient<ApiMessageResponse>('/api/onboarding/business-type', {
       method: 'PUT',
       body: JSON.stringify(data),
       requiresAuth: true,
@@ -33,11 +33,21 @@ export const onboardingService = {
   },
 
   /**
-   * PUT /api/onboarding/business-type
-   * Selects business type (e.g. TRAINING, ACADEMY, ENTERPRISE, CORPORATE, CONSULTING)
+   * PUT /api/onboarding/business-info
    */
-  saveBusinessType: async (data: BusinessTypeData): Promise<ApiMessageResponse> => {
-    return apiClient<ApiMessageResponse>('/api/onboarding/business-type', {
+  saveBusinessInfo: async (data: BusinessInfo): Promise<ApiMessageResponse> => {
+    return await apiClient<ApiMessageResponse>('/api/onboarding/business-info', {
+      method: 'PUT',
+      body: JSON.stringify(data),
+      requiresAuth: true,
+    });
+  },
+
+  /**
+   * PUT /api/onboarding/entity-config
+   */
+  saveEntityConfig: async (data: EntityConfigData): Promise<ApiMessageResponse> => {
+    return await apiClient<ApiMessageResponse>('/api/onboarding/entity-config', {
       method: 'PUT',
       body: JSON.stringify(data),
       requiresAuth: true,
@@ -46,10 +56,9 @@ export const onboardingService = {
 
   /**
    * POST /api/onboarding/team
-   * Invites team members with emails and roles
    */
   inviteTeam: async (data: TeamInviteData): Promise<ApiMessageResponse> => {
-    return apiClient<ApiMessageResponse>('/api/onboarding/team', {
+    return await apiClient<ApiMessageResponse>('/api/onboarding/team', {
       method: 'POST',
       body: JSON.stringify(data),
       requiresAuth: true,
@@ -58,10 +67,9 @@ export const onboardingService = {
 
   /**
    * PUT /api/onboarding/modules
-   * Configures active platform modules
    */
   configureModules: async (data: ModulesData): Promise<ApiMessageResponse> => {
-    return apiClient<ApiMessageResponse>('/api/onboarding/modules', {
+    return await apiClient<ApiMessageResponse>('/api/onboarding/modules', {
       method: 'PUT',
       body: JSON.stringify(data),
       requiresAuth: true,
@@ -70,10 +78,9 @@ export const onboardingService = {
 
   /**
    * POST /api/onboarding/complete
-   * Finalizes onboarding setup
    */
-  completeOnboarding: async (): Promise<ApiMessageResponse> => {
-    return apiClient<ApiMessageResponse>('/api/onboarding/complete', {
+  completeOnboarding: async (): Promise<OnboardingCompleteResponse> => {
+    return await apiClient<OnboardingCompleteResponse>('/api/onboarding/complete', {
       method: 'POST',
       requiresAuth: true,
     });
